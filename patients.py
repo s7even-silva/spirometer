@@ -77,12 +77,10 @@ def crear_sesion(dni, pef_teorico):
 
 
 def _recalcular_resumen(sesion):
-    """Recalcula, sobre todos los intentos de la sesión, cuál tiene el mejor PEF y
-    cuál el mejor FVC (no necesariamente el mismo), y compone el resumen clínico."""
+    """Delega en spirometry.resumir_sesion la decisión clínica de mejor PEF/FVC
+    y repetibilidad, y guarda el resultado en la sesión persistida."""
     intentos = sesion["intentos"]
-
-    idx_mejor_pef = max(range(len(intentos)), key=lambda i: intentos[i]["pef_real"])
-    idx_mejor_fvc = max(range(len(intentos)), key=lambda i: intentos[i]["fvc"])
+    idx_mejor_pef, idx_mejor_fvc, resumen = spirometry.resumir_sesion(intentos, sesion["pef_teorico"])
 
     for i, intento in enumerate(intentos):
         intento["es_mejor_pef"] = i == idx_mejor_pef
@@ -90,23 +88,7 @@ def _recalcular_resumen(sesion):
 
     sesion["mejor_pef_intento"] = intentos[idx_mejor_pef]["numero"]
     sesion["mejor_fvc_intento"] = intentos[idx_mejor_fvc]["numero"]
-
-    mejor_pef = intentos[idx_mejor_pef]
-    mejor_fvc = intentos[idx_mejor_fvc]
-    rendimiento_pct = mejor_pef["rendimiento_pct"]
-    clase_badge, texto_diag = spirometry.clasificar_diagnostico(rendimiento_pct, mejor_fvc["fev1_fvc_pct"])
-
-    sesion["resumen"] = {
-        "pef_real": mejor_pef["pef_real"],
-        "pef_teorico": sesion["pef_teorico"],
-        "fvc": mejor_fvc["fvc"],
-        "fev1": mejor_fvc["fev1"],
-        "fev1_fvc_pct": mejor_fvc["fev1_fvc_pct"],
-        "fef25_75": mejor_fvc["fef25_75"],
-        "rendimiento_pct": rendimiento_pct,
-        "clase_badge": clase_badge,
-        "texto_diagnostico": texto_diag,
-    }
+    sesion["resumen"] = resumen
 
 
 def agregar_intento(dni, id_sesion, intento):

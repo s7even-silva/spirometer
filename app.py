@@ -5,6 +5,7 @@ sesión de espirometría (con varios intentos) a partir de la lectura
 continua del puerto serial.
 """
 import argparse
+import logging
 import queue
 import threading
 from datetime import datetime
@@ -17,7 +18,10 @@ import config
 import patients
 import processing
 import spirometry
+from logging_config import configurar_logging
 from serial_reader import lector
+
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = "spiroIntelli-dev-secret"  # solo para uso local
@@ -148,6 +152,7 @@ def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico):
         lector.detener_sesion(cola)
 
     if not soplido_iniciado:
+        logger.warning("Intento %d (sesión %s): sin soplido detectado", numero_intento, id_sesion)
         socketio.emit("prueba_error", {"mensaje": "No se detectó ningún soplido durante la prueba."}, to=sid)
         return
 
@@ -162,6 +167,7 @@ def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico):
     try:
         metricas = spirometry.calcular_metricas(tiempo_uniforme, flujo_final, volumen_final, pef_teorico)
     except ValueError as error:
+        logger.warning("Intento %d (sesión %s): error al calcular métricas: %s", numero_intento, id_sesion, error)
         socketio.emit("prueba_error", {"mensaje": str(error)}, to=sid)
         return
 
@@ -173,6 +179,10 @@ def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico):
     registro = patients.agregar_intento(dni, id_sesion, intento)
     sesion_guardada = next(s for s in registro["sesiones"] if s["id_sesion"] == id_sesion)
 
+    logger.info(
+        "Intento %d (sesión %s, paciente %s) completo: PEF=%.2f FVC=%.2f aceptable=%s",
+        numero_intento, id_sesion, dni, metricas["pef_real"], metricas["fvc"], metricas["aceptable"],
+    )
     socketio.emit(
         "intento_completo",
         {"numero_intento": numero_intento, "sesion": sesion_guardada},
@@ -195,6 +205,7 @@ def manejar_iniciar_sesion():
         "id_sesion": id_sesion,
         "siguiente_numero_intento": 1,
     }
+    logger.info("Sesión %s iniciada para paciente %s (PEF teórico=%.2f)", id_sesion, dni_activo, pef_teorico)
     socketio.emit(
         "sesion_iniciada",
         {"id_sesion": id_sesion, "pef_teorico": pef_teorico, "max_intentos": config.MAX_INTENTOS_POR_SESION},
@@ -236,7 +247,9 @@ def manejar_iniciar_intento():
 
 @socketio.on("finalizar_sesion")
 def manejar_finalizar_sesion():
-    sesiones_activas.pop(request.sid, None)
+    sesion = sesiones_activas.pop(request.sid, None)
+    if sesion:
+        logger.info("Sesión %s finalizada por el operador", sesion["id_sesion"])
 
 
 @socketio.on("detener_prueba")
@@ -268,6 +281,7 @@ def _parsear_argumentos():
 
 
 if __name__ == "__main__":
+    configurar_logging()
     args = _parsear_argumentos()
     if args.test is not None:
         config.MODO_SIMULADO = True

@@ -72,10 +72,18 @@ DURACION_MAX_PRUEBA_S = 15.0          # corte de seguridad si nunca baja del umb
 MAX_INTENTOS_POR_SESION = 8
 MIN_INTENTOS_ACEPTABLES_SUGERIDO = 3
 
-# Criterios de aceptabilidad de cada intento (heurística simplificada, no
-# sustituye el back-extrapolation volumétrico completo del estándar ATS/ERS).
+# Criterios de aceptabilidad de cada intento (heurística ATS/ERS simplificada).
 FET_MINIMO_ACEPTABLE_S = 3.0           # duración mínima de la espiración activa
 VENTANA_MESETA_S = 0.5                 # ventana final para verificar meseta de volumen
 TOLERANCIA_MESETA_VOLUMEN_L = 0.025    # cambio máximo de volumen admitido en esa ventana
 TIEMPO_MAXIMO_PEF_ACEPTABLE_S = 0.5    # el pico debe alcanzarse rápido (esfuerzo explosivo)
 FLUJO_MINIMO_INTERRUPCION_L_S = -1.0   # flujo por debajo de esto sugiere tos/interrupción
+
+# Extrapolación retroactiva (back-extrapolation) para fijar t0 con precisión:
+# el volumen extrapolado (Vbe) debe ser menor al mayor entre estos dos límites.
+EXTRAPOLACION_MAX_PCT_FVC = 0.05       # 5% del FVC
+EXTRAPOLACION_MAX_ABSOLUTA_L = 0.150   # 150 mL
+
+# Repetibilidad entre intentos: diferencia máxima admitida entre los dos
+# mejores FVC de una sesión para considerarla clínicamente repetible.
+REPETIBILIDAD_MAX_DIFERENCIA_FVC_L = 0.150

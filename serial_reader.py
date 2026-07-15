@@ -7,6 +7,7 @@ de que haya una prueba de espirometría en curso. Mientras no hay ninguna
 sesión de captura activa, mantiene actualizado un offset de calibración
 de cero (promedio de la señal en reposo) para compensar deriva del sensor.
 """
+import logging
 import queue
 import threading
 import time
@@ -18,6 +19,8 @@ import serial
 import config
 import perfiles_simulacion
 import processing
+
+logger = logging.getLogger(__name__)
 
 
 class LectorSerial:
@@ -38,9 +41,12 @@ class LectorSerial:
         self._detener.clear()
         self._hilo = threading.Thread(target=self._bucle_lectura, daemon=True)
         self._hilo.start()
+        modo = f"simulado ({config.PERFIL_SIMULACION})" if config.MODO_SIMULADO else "hardware"
+        logger.info("LectorSerial iniciado en modo %s", modo)
 
     def detener(self):
         self._detener.set()
+        logger.info("LectorSerial detenido")
 
     def _bucle_lectura(self):
         if config.MODO_SIMULADO:
@@ -58,6 +64,7 @@ class LectorSerial:
                     config.SERIAL_PORT, config.BAUD_RATE, timeout=config.SERIAL_TIMEOUT_S
                 ) as puerto:
                     puerto.reset_input_buffer()
+                    logger.info("Puerto serial %s abierto (%d baud)", config.SERIAL_PORT, config.BAUD_RATE)
                     while not self._detener.is_set():
                         linea = puerto.readline().decode("utf-8", errors="ignore").strip()
                         if not linea:
@@ -65,9 +72,14 @@ class LectorSerial:
                         try:
                             presion_pa = float(linea)
                         except ValueError:
+                            logger.warning("Línea serial no numérica descartada: %r", linea)
                             continue
                         self._procesar_muestra(presion_pa)
-            except serial.SerialException:
+            except serial.SerialException as error:
+                logger.warning(
+                    "Puerto serial %s no disponible (%s), reintentando en %.1fs",
+                    config.SERIAL_PORT, error, config.RECONEXION_ESPERA_S,
+                )
                 time.sleep(config.RECONEXION_ESPERA_S)
 
     # ------------------------------------------------------------------
@@ -127,12 +139,14 @@ class LectorSerial:
         cola = queue.Queue()
         with self._lock:
             self._suscriptores.append(cola)
+        logger.info("Sesión de captura suscrita (offset_cero=%.3f Pa)", self.offset_cero)
         return cola
 
     def detener_sesion(self, cola):
         with self._lock:
             if cola in self._suscriptores:
                 self._suscriptores.remove(cola)
+        logger.info("Sesión de captura finalizada")
 
 
 lector = LectorSerial()

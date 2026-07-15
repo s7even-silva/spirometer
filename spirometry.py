@@ -108,6 +108,52 @@ def evaluar_aceptabilidad(tiempo_rel, flujo_rel, volumen_rel, tiempo_en_pef, fet
     return True, None
 
 
+def evaluar_repetibilidad(intentos):
+    """
+    Repetibilidad ATS/ERS entre maniobras: la diferencia entre los dos
+    mejores FVC de la sesión no debe superar REPETIBILIDAD_MAX_DIFERENCIA_FVC_L.
+    Devuelve (repetible, diferencia_fvc_l); repetible es None si hay menos
+    de 2 intentos (no evaluable todavía).
+    """
+    if len(intentos) < 2:
+        return None, None
+    fvc_ordenados = sorted((i["fvc"] for i in intentos), reverse=True)
+    diferencia = fvc_ordenados[0] - fvc_ordenados[1]
+    return diferencia <= config.REPETIBILIDAD_MAX_DIFERENCIA_FVC_L, float(diferencia)
+
+
+def resumir_sesion(intentos, pef_teorico):
+    """
+    Dada la lista de intentos de una sesión, decide cuál tiene el mejor PEF y
+    cuál el mejor FVC (no necesariamente el mismo intento, según el estándar
+    clínico), evalúa repetibilidad entre maniobras, y compone el resumen.
+    Devuelve (idx_mejor_pef, idx_mejor_fvc, resumen).
+    """
+    idx_mejor_pef = max(range(len(intentos)), key=lambda i: intentos[i]["pef_real"])
+    idx_mejor_fvc = max(range(len(intentos)), key=lambda i: intentos[i]["fvc"])
+
+    mejor_pef = intentos[idx_mejor_pef]
+    mejor_fvc = intentos[idx_mejor_fvc]
+    rendimiento_pct = mejor_pef["rendimiento_pct"]
+    clase_badge, texto_diag = clasificar_diagnostico(rendimiento_pct, mejor_fvc["fev1_fvc_pct"])
+    repetible, diferencia_fvc = evaluar_repetibilidad(intentos)
+
+    resumen = {
+        "pef_real": mejor_pef["pef_real"],
+        "pef_teorico": pef_teorico,
+        "fvc": mejor_fvc["fvc"],
+        "fev1": mejor_fvc["fev1"],
+        "fev1_fvc_pct": mejor_fvc["fev1_fvc_pct"],
+        "fef25_75": mejor_fvc["fef25_75"],
+        "rendimiento_pct": rendimiento_pct,
+        "clase_badge": clase_badge,
+        "texto_diagnostico": texto_diag,
+        "repetible": repetible,
+        "diferencia_fvc": diferencia_fvc,
+    }
+    return idx_mejor_pef, idx_mejor_fvc, resumen
+
+
 def calcular_metricas(tiempo, flujo, volumen, pef_teorico):
     """
     tiempo, flujo, volumen: arreglos (numpy o listas) de la sesión completa.
