@@ -92,6 +92,21 @@ def seleccionar_paciente(dni):
     return redirect(url_for("historial"))
 
 
+@app.route("/historial/<dni>")
+def historial_paciente(dni):
+    paciente = patients.cargar_paciente(dni)
+    if paciente is None:
+        return redirect(url_for("historial"))
+
+    sesiones = sorted(paciente["sesiones"], key=lambda s: s["fecha"], reverse=True)
+    return render_template(
+        "historial_paciente.html",
+        paciente=paciente,
+        sesiones=sesiones,
+        pagina_activa="historial",
+    )
+
+
 @app.route("/config/altitud", methods=["GET", "POST"])
 def config_altitud():
     if request.method == "POST":
@@ -232,15 +247,20 @@ def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico):
 
 
 @socketio.on("iniciar_sesion")
-def manejar_iniciar_sesion():
+def manejar_iniciar_sesion(data=None):
     dni_activo = session.get("paciente_dni")
     paciente = patients.cargar_paciente(dni_activo) if dni_activo else None
     if paciente is None:
         socketio.emit("prueba_error", {"mensaje": "No hay un paciente activo seleccionado."}, to=request.sid)
         return
 
+    # Fecha opcional para registrar una prueba histórica (ej. digitalizar un
+    # resultado en papel) en vez de la fecha/hora actual del servidor. Nunca
+    # sobrescribe una sesión existente: cada una tiene su propio id_sesion.
+    fecha_manual = (data or {}).get("fecha") or None
+
     pef_teorico = spirometry.calcular_pef_teorico(paciente["sexo"], paciente["edad"], paciente["estatura"])
-    id_sesion = patients.crear_sesion(dni_activo, pef_teorico)
+    id_sesion = patients.crear_sesion(dni_activo, pef_teorico, fecha=fecha_manual)
     sesiones_activas[request.sid] = {
         "detener": threading.Event(),
         "id_sesion": id_sesion,

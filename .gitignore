@@ -4,3 +4,4 @@ __pycache__/
 Historiales_Medicos/
 logs/
 .claude/
+espirometro.db

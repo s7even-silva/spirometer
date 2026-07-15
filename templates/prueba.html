@@ -16,6 +16,13 @@
   <div class="medicion-grid">
     <div class="medicion-col-principal">
       <div class="card">
+        <div class="fecha-manual-fila">
+          <label class="fecha-manual-check">
+            <input type="checkbox" id="usar-fecha-manual">
+            Registrar con fecha y hora distinta a la actual
+          </label>
+          <input type="datetime-local" id="fecha-manual-input" class="fecha-manual-input" disabled>
+        </div>
         <div class="controles-fila">
           <button id="btn-iniciar-sesion" class="btn-primary">Iniciar sesión</button>
           <button id="btn-nuevo-intento" class="btn-primary" hidden>Repetir intento</button>

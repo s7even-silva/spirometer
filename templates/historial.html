@@ -40,7 +40,7 @@
   <div class="tabla-scroll">
   <table class="tabla-pacientes">
     <thead>
-      <tr><th>DNI</th><th>Nombre</th><th>Edad</th><th>Sexo</th><th>Sesiones</th><th></th></tr>
+      <tr><th>DNI</th><th>Nombre</th><th>Edad</th><th>Sexo</th><th>Sesiones</th><th></th><th></th></tr>
     </thead>
     <tbody>
       {% for p in pacientes %}
@@ -55,9 +55,10 @@
             <button type="submit" class="btn-secondary">Seleccionar</button>
           </form>
         </td>
+        <td><a href="{{ url_for('historial_paciente', dni=p.dni) }}" class="btn-secondary btn-enlace">Ver historial</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="6">Aún no hay pacientes registrados.</td></tr>
+      <tr><td colspan="7">Aún no hay pacientes registrados.</td></tr>
       {% endfor %}
     </tbody>
   </table>

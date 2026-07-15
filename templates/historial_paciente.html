@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="banner">
+  <h2>{{ paciente.nombre }}</h2>
+  <p>DNI {{ paciente.dni }} · {{ paciente.edad }} años · {{ paciente.sexo }} · {{ paciente.estatura }} cm · {{ paciente.tabaquismo }}</p>
+</div>
+
+<div class="card">
+  <a href="{{ url_for('historial') }}" class="btn-secondary btn-enlace">← Volver al listado</a>
+</div>
+
+<div class="card">
+  <h3>Sesiones de espirometría ({{ sesiones|length }})</h3>
+  {% if not sesiones %}
+  <p class="metric-sub">Este paciente aún no tiene sesiones registradas.</p>
+  {% endif %}
+  {% for s in sesiones %}
+  <details class="sesion-detalle">
+    <summary>
+      <span class="sesion-fecha">{{ s.fecha }}</span>
+      {% if s.resumen %}
+      <span class="sesion-resumen">
+        PEF {{ "%.2f"|format(s.resumen.pef_real) }} L/s · FVC {{ "%.2f"|format(s.resumen.fvc) }} L
+        · FEV1/FVC {{ "%.1f"|format(s.resumen.fev1_fvc_pct) }}%
+      </span>
+      <span class="status-badge {{ s.resumen.clase_badge }}">{{ s.resumen.texto_diagnostico }}</span>
+      {% else %}
+      <span class="sesion-resumen">Sin intentos completados</span>
+      {% endif %}
+    </summary>
+
+    <div class="tabla-scroll">
+    <table class="tabla-pacientes">
+      <thead>
+        <tr><th>Intento</th><th>Fecha</th><th>PEF</th><th>FVC</th><th>FEV1/FVC</th><th>Aceptable</th><th>Mejor</th></tr>
+      </thead>
+      <tbody>
+        {% for i in s.intentos %}
+        <tr>
+          <td>{{ i.numero }}</td>
+          <td>{{ i.fecha }}</td>
+          <td>{{ "%.2f"|format(i.pef_real) }} L/s</td>
+          <td>{{ "%.2f"|format(i.fvc) }} L</td>
+          <td>{{ "%.1f"|format(i.fev1_fvc_pct) }}%</td>
+          <td>
+            <span class="status-badge {{ 'badge-aceptable' if i.aceptable else 'badge-no-aceptable' }}">
+              {{ "Sí" if i.aceptable else i.motivo_no_aceptable }}
+            </span>
+          </td>
+          <td>
+            {% if i.es_mejor_pef %}<span class="status-badge badge-verde">Mejor PEF</span>{% endif %}
+            {% if i.es_mejor_fvc %}<span class="status-badge badge-verde">Mejor FVC</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </details>
+  {% endfor %}
+</div>
+{% endblock %}

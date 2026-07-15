@@ -123,9 +123,22 @@ function iniciarCapturaEnVivo() {
     btnFinalizarSesion.disabled = true;
 }
 
+const usarFechaManual = document.getElementById("usar-fecha-manual");
+const fechaManualInput = document.getElementById("fecha-manual-input");
+
+usarFechaManual.addEventListener("change", () => {
+    fechaManualInput.disabled = !usarFechaManual.checked;
+    if (usarFechaManual.checked && !fechaManualInput.value) {
+        const ahora = new Date();
+        ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+        fechaManualInput.value = ahora.toISOString().slice(0, 16);
+    }
+});
+
 btnIniciarSesion.addEventListener("click", () => {
     btnIniciarSesion.disabled = true;
-    socket.emit("iniciar_sesion");
+    const fecha = usarFechaManual.checked && fechaManualInput.value ? fechaManualInput.value : null;
+    socket.emit("iniciar_sesion", { fecha });
 });
 
 btnNuevoIntento.addEventListener("click", () => {

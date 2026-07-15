@@ -788,6 +788,33 @@ h3 {
     gap: 10px;
 }
 
+.fecha-manual-fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.fecha-manual-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--ink-muted);
+    cursor: pointer;
+}
+
+.fecha-manual-input {
+    width: auto;
+    padding: 6px 9px;
+    font-size: 13px;
+}
+
+.fecha-manual-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .grafica-vivo { height: 360px; }
 
 /* Paso 3: resultados. Métricas + IA a la izquierda (lo que se necesita ver
@@ -849,6 +876,60 @@ h3 {
     display: grid;
     grid-template-columns: 1fr;
     gap: 14px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Historial detallado por paciente: lista de sesiones colapsables */
+/* ---------------------------------------------------------------- */
+.sesion-detalle {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.sesion-detalle summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.sesion-detalle summary::-webkit-details-marker { display: none; }
+
+.sesion-detalle summary::before {
+    content: "▸";
+    color: var(--ink-faint);
+    transition: transform 0.15s ease;
+}
+
+.sesion-detalle[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.sesion-fecha {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 600;
+    min-width: 160px;
+}
+
+.sesion-resumen {
+    font-size: 13px;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+    flex: 1;
+}
+
+.sesion-detalle .tabla-scroll {
+    margin-top: 12px;
+}
+
+.btn-enlace {
+    text-decoration: none;
+    display: inline-block;
 }
 
 /* Diseño exclusivo para escritorio: sin adaptación a pantallas pequeñas. */
