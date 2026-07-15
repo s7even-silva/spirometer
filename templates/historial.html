@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="banner">
+  <h2>🗄️ Sistema de Historial Clínico Electrónico</h2>
+  <p>Base de datos local indexada por DNI.</p>
+</div>
+
+<div class="card">
+  <form method="post" action="{{ url_for('historial') }}">
+    <div class="form-grid">
+      <div class="form-col">
+        <label>DNI del Paciente</label>
+        <input type="text" name="dni" required value="{{ paciente_activo.dni if paciente_activo else '' }}">
+        <label>Nombre Completo</label>
+        <input type="text" name="nombre" required value="{{ paciente_activo.nombre if paciente_activo else '' }}">
+        <label>Edad (Años)</label>
+        <input type="number" name="edad" min="5" max="100" required value="{{ paciente_activo.edad if paciente_activo else 35 }}">
+      </div>
+      <div class="form-col">
+        <label>Sexo Biológico</label>
+        <select name="sexo">
+          <option {{ "selected" if paciente_activo and paciente_activo.sexo == "Masculino" }}>Masculino</option>
+          <option {{ "selected" if paciente_activo and paciente_activo.sexo == "Femenino" }}>Femenino</option>
+        </select>
+        <label>Estatura (cm)</label>
+        <input type="number" name="estatura" min="100" max="220" required value="{{ paciente_activo.estatura if paciente_activo else 178 }}">
+        <label>Tabaquismo</label>
+        <select name="tabaquismo">
+          <option {{ "selected" if paciente_activo and paciente_activo.tabaquismo == "No Fumador" }}>No Fumador</option>
+          <option {{ "selected" if paciente_activo and paciente_activo.tabaquismo == "Fumador" }}>Fumador</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn-primary">💾 Registrar Paciente en Base de Datos</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Pacientes Registrados</h3>
+  <table class="tabla-pacientes">
+    <thead>
+      <tr><th>DNI</th><th>Nombre</th><th>Edad</th><th>Sexo</th><th>Pruebas</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for p in pacientes %}
+      <tr class="{{ 'fila-activa' if paciente_activo and p.dni == paciente_activo.dni else '' }}">
+        <td>{{ p.dni }}</td>
+        <td>{{ p.nombre }}</td>
+        <td>{{ p.edad }}</td>
+        <td>{{ p.sexo }}</td>
+        <td>{{ p.pruebas|length }}</td>
+        <td>
+          <form method="post" action="{{ url_for('seleccionar_paciente', dni=p.dni) }}">
+            <button type="submit" class="btn-secondary">Seleccionar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6">Aún no hay pacientes registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

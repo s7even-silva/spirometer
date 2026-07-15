@@ -1,0 +1,287 @@
+/* Traducción del look & feel del prototipo SpiroIntelli Pro (Streamlit) a HTML/CSS plano */
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: "Inter", "Segoe UI", sans-serif;
+    background-color: #F8FAFC;
+    color: #1E293B;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---------------------------------------------------------------- */
+/* Sidebar */
+/* ---------------------------------------------------------------- */
+.sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background-color: #9333EA;
+    padding: 24px 18px;
+    color: #FFFFFF;
+}
+
+.sidebar .brand {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.sidebar .brand img {
+    margin-right: 12px;
+    border-radius: 8px;
+}
+
+.sidebar .brand h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.sidebar hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 16px 0;
+}
+
+.menu-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
+}
+
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    padding: 10px 15px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.nav-btn img {
+    filter: brightness(0) invert(1);
+}
+
+.nav-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: #FFFFFF;
+    color: #FFFFFF;
+}
+
+.nav-btn.active {
+    background-color: #FFFFFF;
+    color: #9333EA;
+    font-weight: 700;
+    border: none;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.nav-btn.active img {
+    filter: none;
+}
+
+/* ---------------------------------------------------------------- */
+/* Contenido */
+/* ---------------------------------------------------------------- */
+.content {
+    flex: 1;
+    padding: 28px 36px;
+}
+
+.banner {
+    margin-bottom: 20px;
+}
+
+.banner h2 { margin: 0 0 4px 0; }
+.banner p { margin: 0; color: #64748B; }
+
+.card {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 16px;
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.03);
+    padding: 22px;
+    margin-bottom: 18px;
+}
+
+.card-accent {
+    border-left: 5px solid #4F46E5;
+}
+
+.texto-acento { color: #4F46E5; font-weight: 600; }
+
+.titulo-card {
+    text-align: center;
+    color: #1E293B;
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Formularios */
+/* ---------------------------------------------------------------- */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    font-size: 13px;
+    color: #64748B;
+    margin: 10px 0 4px;
+}
+
+input, select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background-color: #4F46E5;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-primary:disabled { background-color: #C7D2FE; cursor: not-allowed; }
+
+.btn-secondary {
+    background-color: #F1F5F9;
+    color: #1E293B;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.btn-secondary:disabled { color: #94A3B8; cursor: not-allowed; }
+
+.estado {
+    margin-top: 10px;
+    color: #64748B;
+    font-size: 14px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Tabla de pacientes */
+/* ---------------------------------------------------------------- */
+.tabla-pacientes {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.tabla-pacientes th, .tabla-pacientes td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 14px;
+}
+
+.tabla-pacientes tr.fila-activa {
+    background-color: #F5F3FF;
+}
+
+/* ---------------------------------------------------------------- */
+/* Badges de diagnóstico */
+/* ---------------------------------------------------------------- */
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    display: inline-block;
+}
+
+.badge-verde { background-color: #DCFCE7; color: #15803D; }
+.badge-amarillo { background-color: #FEF9C3; color: #A16207; }
+.badge-roja { background-color: #FEE2E2; color: #B91C1C; }
+
+/* ---------------------------------------------------------------- */
+/* Métricas y gráficas */
+/* ---------------------------------------------------------------- */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.metric-card {
+    background-color: #FFFFFF;
+    padding: 22px;
+    border-radius: 16px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.03);
+    text-align: center;
+}
+
+.metric-label {
+    color: #64748B;
+    font-weight: 500;
+    font-size: 14px;
+    margin: 0;
+}
+
+.metric-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin: 8px 0 0;
+}
+
+.metric-card h2 {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 12px 0;
+}
+
+.dash-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1.7fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.grafica { width: 100%; height: 320px; }
+.grafica-pequena { width: 100%; height: 220px; }
+
+.detalle-grid {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+    .layout { flex-direction: column; }
+    .sidebar { width: 100%; }
+    .form-grid, .dash-grid, .metric-grid { grid-template-columns: 1fr; }
+}

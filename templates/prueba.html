@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="banner">
+  <h2>⚡ Laboratorio de Función Pulmonar</h2>
+  <p>Detección automatizada de PEF y comparación epidemiológica.</p>
+</div>
+
+<div class="card card-accent">
+  <b>Paciente:</b> {{ paciente.nombre }} &nbsp;|&nbsp;
+  <b>Objetivo Médico esperado (PEF Teórico):</b>
+  <span class="texto-acento">{{ "%.2f"|format(pef_teorico) }} L/s</span>
+</div>
+
+<div class="card">
+  <button id="btn-iniciar" class="btn-primary">▶️ CAPTURAR ESPIROGRAMA</button>
+  <button id="btn-detener" class="btn-secondary" disabled>⏹️ Detener</button>
+  <p id="estado-captura" class="estado"></p>
+</div>
+
+<div class="card">
+  <b>Curva en vivo (Flujo vs. Tiempo)</b>
+  <div id="grafica-vivo" class="grafica"></div>
+</div>
+
+<div id="resultados" hidden>
+  <h3>Métricas Clínicas Detectadas</h3>
+  <div class="metric-grid">
+    <div class="metric-card">
+      <p class="metric-label">PEF Medido (Pico Máximo)</p>
+      <h2 id="valor-pef">--</h2>
+      <p class="metric-sub">Valor teórico esperado: <b id="valor-pef-teorico">--</b></p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">FVC (Volumen Total)</p>
+      <h2 id="valor-fvc">--</h2>
+      <p class="metric-sub">FEV1: <b id="valor-fev1">--</b> · FEV1/FVC: <b id="valor-fev1-fvc">--</b></p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Diagnóstico Basado en Tabla</p>
+      <span id="badge-diagnostico" class="status-badge">--</span>
+      <p class="metric-sub">Ecuación de Referencia: Knudson et al.</p>
+    </div>
+  </div>
+
+  <h3>📊 Tablero de Control y Diagnóstico</h3>
+  <div class="dash-grid">
+    <div class="card"><p class="titulo-card">Gradímetro de Capacidad Pulmonar</p><div id="grafica-gauge" class="grafica-pequena"></div></div>
+    <div class="card" id="detalle-analitico"></div>
+  </div>
+
+  <h3>Análisis Gráfico y Marcador de Parámetro Crítico</h3>
+  <div class="dash-grid">
+    <div class="card"><b>Curva Volumen vs. Tiempo</b><div id="grafica-volumen-tiempo" class="grafica"></div></div>
+    <div class="card"><b>Lazo Flujo vs. Volumen (Punto de Detección PEF)</b><div id="grafica-flujo-volumen" class="grafica"></div></div>
+  </div>
+</div>
+
+<script>
+  window.PEF_TEORICO = {{ pef_teorico }};
+</script>
+<script src="{{ url_for('static', filename='js/prueba.js') }}"></script>
+{% endblock %}

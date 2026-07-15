@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpiroIntelli Pro</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='img/logo_marca.png') }}" width="45" alt="Logo">
+      <h2>SpiroIntelli Pro</h2>
+    </div>
+    <hr>
+    <p class="menu-label">MENÚ DE OPERACIONES</p>
+    <nav>
+      <a href="{{ url_for('historial') }}" class="nav-btn {{ 'active' if pagina_activa == 'historial' else '' }}">
+        <img src="{{ url_for('static', filename='img/historial.png') }}" width="24" alt="">
+        <span>Historial Clínico (EHR)</span>
+      </a>
+      <a href="{{ url_for('prueba') }}" class="nav-btn {{ 'active' if pagina_activa == 'prueba' else '' }}">
+        <img src="{{ url_for('static', filename='img/espirometria.png') }}" width="24" alt="">
+        <span>Prueba de Espirometría</span>
+      </a>
+    </nav>
+  </aside>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

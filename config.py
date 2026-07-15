@@ -1,0 +1,62 @@
+"""
+Configuración física y de hardware del espirómetro.
+
+Todas las constantes usadas para convertir la diferencia de presión (Pa)
+leída por el puerto serial en flujo (L/s) y volumen (L) están aquí.
+Edita estos valores según el sensor, el tubo y el entorno reales:
+ninguno de estos números está calibrado, son valores de ejemplo.
+"""
+
+# =====================================================================
+# Comunicación serial
+# =====================================================================
+SERIAL_PORT = "COM4"
+BAUD_RATE = 115200
+SAMPLE_INTERVAL_S = 0.010          # 10 ms => 100 Hz, cadencia de envío del microcontrolador
+SERIAL_TIMEOUT_S = 1.0
+RECONEXION_ESPERA_S = 2.0          # segundos entre reintentos si el puerto se desconecta
+
+# Si no hay hardware conectado, genera una señal sintética de soplido en vez
+# de abrir el puerto real. Útil para desarrollar y probar la UI sin sensor.
+MODO_SIMULADO = True
+
+# =====================================================================
+# Geometría del tubo de flujo (tipo Venturi / Pitot con restricción)
+# =====================================================================
+# D1: diámetro de la sección amplia (entrada), D2: diámetro de la garganta/orificio.
+DIAMETRO_ENTRADA_MM = 28.0
+DIAMETRO_GARGANTA_MM = 15.0
+COEFICIENTE_DESCARGA_CD = 0.98      # Cd típico 0.95-0.99, se ajusta con calibración empírica
+
+# =====================================================================
+# Condiciones ambientales / densidad del aire
+# =====================================================================
+TEMPERATURA_AMBIENTE_C = 22.0
+PRESION_ATMOSFERICA_KPA = 101.325
+HUMEDAD_RELATIVA_PCT = 50.0
+
+# Si se fija un valor aquí (distinto de None), se usa directamente y se
+# ignoran temperatura/presión/humedad de arriba para calcular la densidad.
+DENSIDAD_AIRE_MANUAL_KG_M3 = None
+
+# =====================================================================
+# Corrección BTPS (Body Temperature, Pressure, Saturated)
+# =====================================================================
+# El volumen se mide en condiciones ambiente (ATPS) y se corrige a las
+# condiciones dentro del cuerpo (BTPS) como exige la espirometría clínica.
+APLICAR_BTPS = True
+BTPS_TEMP_CORPORAL_C = 37.0
+
+# =====================================================================
+# Calibración de cero y filtrado de señal
+# =====================================================================
+MUESTRAS_CALIBRACION_CERO = 50        # nº de muestras en reposo para el offset de presión
+VENTANA_FILTRO_MEDIA_MOVIL = 5        # nº de muestras para suavizar la señal de presión
+
+# =====================================================================
+# Detección de inicio/fin de la maniobra espirométrica
+# =====================================================================
+UMBRAL_INICIO_SOPLIDO_L_S = 0.15      # flujo mínimo para considerar que empezó el soplido
+UMBRAL_FIN_SOPLIDO_L_S = 0.05         # flujo por debajo del cual se considera que terminó
+UMBRAL_FIN_SOPLIDO_S = 1.0            # segundos sostenidos bajo el umbral para dar la prueba por finalizada
+DURACION_MAX_PRUEBA_S = 15.0          # corte de seguridad si nunca baja del umbral
