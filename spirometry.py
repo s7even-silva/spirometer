@@ -48,12 +48,47 @@ def calcular_fet(tiempo_rel):
     return float(tiempo_rel[-1]) if len(tiempo_rel) > 0 else 0.0
 
 
-def evaluar_aceptabilidad(tiempo_rel, flujo_rel, volumen_rel, tiempo_en_pef, fet):
+def back_extrapolar_t0(tiempo, flujo, volumen, idx_pef):
     """
-    Heurística simplificada de aceptabilidad de la maniobra (no sustituye el
-    back-extrapolation volumétrico completo del estándar ATS/ERS).
+    Extrapolación retroactiva ATS/ERS: traza la tangente en el punto de PEF
+    (pendiente máxima de la curva volumen-tiempo) y la proyecta hacia atrás
+    hasta cruzar el volumen previo al soplido. Ese cruce fija t0 con más
+    precisión que el simple cruce del umbral de inicio.
+
+    tiempo, flujo, volumen: arreglos de la señal completa (sin recortar),
+    para poder ver el tramo previo al umbral de inicio detectado.
+    idx_pef: índice del PEF dentro de esos mismos arreglos completos.
+
+    Devuelve (t0, volumen_extrapolado): t0 en las mismas unidades que
+    `tiempo`, y volumen_extrapolado (Vbe, en L) = volumen en el t0 original
+    (cruce de umbral) menos el volumen en el t0 corregido.
+    """
+    pendiente = flujo[idx_pef]
+    if pendiente <= 0:
+        return float(tiempo[idx_pef]), 0.0
+
+    t_pef = tiempo[idx_pef]
+    v_pef = volumen[idx_pef]
+    # Recta tangente: V(t) = v_pef + pendiente * (t - t_pef). Se busca dónde
+    # cruza el volumen previo al soplido (el mínimo antes del PEF).
+    idx_previos = np.where(tiempo <= t_pef)[0]
+    v_base = float(np.min(volumen[idx_previos])) if len(idx_previos) > 0 else float(volumen[0])
+    t0 = float(t_pef - (v_pef - v_base) / pendiente)
+    t0 = max(t0, float(tiempo[0]))
+    return t0, v_base
+
+
+def evaluar_aceptabilidad(tiempo_rel, flujo_rel, volumen_rel, tiempo_en_pef, fet, volumen_extrapolado, fvc):
+    """
+    Heurística de aceptabilidad de la maniobra siguiendo criterios ATS/ERS,
+    incluyendo el volumen de extrapolación real calculado por
+    back_extrapolar_t0 (Vbe < 5% del FVC o < 150 mL, el que sea mayor).
     Devuelve (aceptable, motivo); motivo es None si es aceptable.
     """
+    limite_extrapolacion = max(config.EXTRAPOLACION_MAX_PCT_FVC * fvc, config.EXTRAPOLACION_MAX_ABSOLUTA_L)
+    if volumen_extrapolado > limite_extrapolacion:
+        return False, "Extrapolación de volumen excesiva (arranque impreciso)"
+
     if fet < config.FET_MINIMO_ACEPTABLE_S:
         return False, "Duración insuficiente"
 
@@ -84,11 +119,22 @@ def calcular_metricas(tiempo, flujo, volumen, pef_teorico):
     volumen = np.asarray(volumen, dtype=float)
 
     sobre_umbral = np.where(flujo >= config.UMBRAL_INICIO_SOPLIDO_L_S)[0]
-    idx_inicio = int(sobre_umbral[0]) if len(sobre_umbral) > 0 else 0
+    idx_inicio_umbral = int(sobre_umbral[0]) if len(sobre_umbral) > 0 else 0
 
-    tiempo_rel = tiempo[idx_inicio:] - tiempo[idx_inicio]
+    if len(flujo[idx_inicio_umbral:]) == 0:
+        raise ValueError("No se detectó soplido por encima del umbral de inicio.")
+
+    # PEF se busca en toda la señal desde el umbral hasta el final, sobre los
+    # arreglos SIN recortar, porque back_extrapolar_t0 necesita ver el tramo
+    # previo al cruce de umbral para trazar la tangente.
+    idx_pef_absoluto = idx_inicio_umbral + int(np.argmax(flujo[idx_inicio_umbral:]))
+    t0, v_base = back_extrapolar_t0(tiempo, flujo, volumen, idx_pef_absoluto)
+    volumen_extrapolado = float(volumen[idx_inicio_umbral] - v_base)
+
+    idx_inicio = int(np.searchsorted(tiempo, t0))
+    tiempo_rel = tiempo[idx_inicio:] - t0
     flujo_rel = flujo[idx_inicio:]
-    volumen_rel = volumen[idx_inicio:] - volumen[idx_inicio]
+    volumen_rel = volumen[idx_inicio:] - v_base
 
     if len(flujo_rel) == 0:
         raise ValueError("No se detectó soplido por encima del umbral de inicio.")
@@ -107,7 +153,7 @@ def calcular_metricas(tiempo, flujo, volumen, pef_teorico):
     rendimiento_pct = (pef_real / pef_teorico * 100.0) if pef_teorico else 0.0
     clase_badge, texto_diag = clasificar_diagnostico(rendimiento_pct, fev1_fvc_pct)
     aceptable, motivo_no_aceptable = evaluar_aceptabilidad(
-        tiempo_rel, flujo_rel, volumen_rel, tiempo_en_pef, fet
+        tiempo_rel, flujo_rel, volumen_rel, tiempo_en_pef, fet, volumen_extrapolado, fvc
     )
 
     return {
@@ -123,6 +169,7 @@ def calcular_metricas(tiempo, flujo, volumen, pef_teorico):
         "fev1_fvc_pct": fev1_fvc_pct,
         "fef25_75": fef25_75,
         "fet": fet,
+        "volumen_extrapolado": volumen_extrapolado,
         "rendimiento_pct": rendimiento_pct,
         "clase_badge": clase_badge,
         "texto_diagnostico": texto_diag,
