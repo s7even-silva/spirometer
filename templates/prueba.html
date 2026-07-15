@@ -1,65 +1,65 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="banner">
-  <h2>⚡ Laboratorio de Función Pulmonar</h2>
-  <p>Detección automatizada de PEF y comparación epidemiológica.</p>
+  <h2>Prueba de espirometría</h2>
+  <p>Captura de maniobra forzada y comparación con valores de referencia.</p>
 </div>
 
 <div class="card card-accent">
   <b>Paciente:</b> {{ paciente.nombre }} &nbsp;|&nbsp;
-  <b>Objetivo Médico esperado (PEF Teórico):</b>
+  <b>PEF teórico:</b>
   <span class="texto-acento">{{ "%.2f"|format(pef_teorico) }} L/s</span>
 </div>
 
 <div class="card">
-  <button id="btn-iniciar-sesion" class="btn-primary">▶️ INICIAR SESIÓN DE ESPIROMETRÍA</button>
-  <button id="btn-nuevo-intento" class="btn-primary" hidden>🔄 Repetir Intento</button>
-  <button id="btn-detener" class="btn-secondary" disabled>⏹️ Detener</button>
-  <button id="btn-finalizar-sesion" class="btn-secondary" hidden>✅ Finalizar Sesión</button>
+  <button id="btn-iniciar-sesion" class="btn-primary">Iniciar sesión</button>
+  <button id="btn-nuevo-intento" class="btn-primary" hidden>Repetir intento</button>
+  <button id="btn-detener" class="btn-secondary" disabled>Detener</button>
+  <button id="btn-finalizar-sesion" class="btn-secondary" hidden>Finalizar sesión</button>
   <span id="contador-intentos" class="contador-intentos"></span>
   <p id="estado-captura" class="estado"></p>
 </div>
 
 <div class="card">
-  <b>Curva en vivo (Flujo vs. Tiempo)</b>
+  <b>Curva en vivo — flujo / tiempo</b>
   <div id="grafica-vivo" class="grafica"></div>
 </div>
 
 <div class="card" id="tarjeta-intentos" hidden>
-  <b>Intentos de esta Sesión</b>
+  <b>Intentos de esta sesión</b>
   <div id="lista-intentos" class="lista-intentos"></div>
 </div>
 
 <div id="resultados" hidden>
-  <h3>Métricas Clínicas Detectadas (Mejor Intento)</h3>
+  <h3>Resultados — mejor intento</h3>
   <div class="metric-grid">
     <div class="metric-card">
-      <p class="metric-label">PEF Medido (Pico Máximo)</p>
+      <p class="metric-label">PEF</p>
       <h2 id="valor-pef">--</h2>
-      <p class="metric-sub">Valor teórico esperado: <b id="valor-pef-teorico">--</b></p>
+      <p class="metric-sub">Teórico: <b id="valor-pef-teorico">--</b></p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">FVC (Volumen Total)</p>
+      <p class="metric-label">FVC</p>
       <h2 id="valor-fvc">--</h2>
       <p class="metric-sub">FEV1: <b id="valor-fev1">--</b> · FEV1/FVC: <b id="valor-fev1-fvc">--</b></p>
     </div>
     <div class="metric-card">
-      <p class="metric-label">Diagnóstico Basado en Tabla</p>
+      <p class="metric-label">Diagnóstico</p>
       <span id="badge-diagnostico" class="status-badge">--</span>
-      <p class="metric-sub">Ecuación de Referencia: Knudson et al.</p>
+      <p class="metric-sub">Referencia: Knudson et al.</p>
     </div>
   </div>
 
-  <h3>📊 Tablero de Control y Diagnóstico</h3>
+  <h3>Panel de control</h3>
   <div class="dash-grid">
-    <div class="card"><p class="titulo-card">Gradímetro de Capacidad Pulmonar</p><div id="grafica-gauge" class="grafica-pequena"></div></div>
+    <div class="card"><p class="titulo-card">Rendimiento vs. valor teórico</p><div id="grafica-gauge" class="grafica-pequena"></div></div>
     <div class="card" id="detalle-analitico"></div>
   </div>
 
-  <h3>Análisis Gráfico y Marcador de Parámetro Crítico</h3>
+  <h3>Curvas de la maniobra</h3>
   <div class="dash-grid">
-    <div class="card"><b>Curva Volumen vs. Tiempo (Mejor Intento)</b><div id="grafica-volumen-tiempo" class="grafica"></div></div>
-    <div class="card"><b>Lazo Flujo vs. Volumen (Todos los Intentos)</b><div id="grafica-flujo-volumen" class="grafica"></div></div>
+    <div class="card"><b>Volumen / tiempo — mejor intento</b><div id="grafica-volumen-tiempo" class="grafica"></div></div>
+    <div class="card"><b>Flujo / volumen — todos los intentos</b><div id="grafica-flujo-volumen" class="grafica"></div></div>
   </div>
 </div>
 

@@ -7,30 +7,175 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+  (function () {
+    var guardado = localStorage.getItem("spiro-tema");
+    if (guardado) document.documentElement.setAttribute("data-theme", guardado);
+  })();
+</script>
 </head>
 <body>
-<div class="layout">
-  <aside class="sidebar">
-    <div class="brand">
-      <img src="{{ url_for('static', filename='img/logo_marca.png') }}" width="45" alt="Logo">
-      <h2>SpiroIntelli Pro</h2>
+<header class="topbar">
+  <div class="topbar-brand">
+    <img src="{{ url_for('static', filename='img/logo_marca.png') }}" width="30" alt="Logo">
+    <span class="topbar-title">SpiroIntelli Pro</span>
+  </div>
+
+  <nav class="stepper" aria-label="Progreso del flujo clínico">
+    <a href="{{ url_for('historial') }}"
+       class="step {{ 'active' if pagina_activa == 'historial' else '' }} {{ 'done' if paciente_activo and pagina_activa != 'historial' else '' }}">
+      <span class="step-marker">
+        {% if paciente_activo and pagina_activa != 'historial' %}
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8.5l3 3 7-7"/></svg>
+        {% else %}1{% endif %}
+      </span>
+      <span class="step-label">
+        <span class="step-title">Paciente</span>
+        <span class="step-sub">{{ paciente_activo.nombre if paciente_activo else "Seleccionar o registrar" }}</span>
+      </span>
+    </a>
+    <span class="step-connector"></span>
+    {% if paciente_activo %}
+    <a href="{{ url_for('prueba') }}" class="step {{ 'active' if pagina_activa == 'prueba' else '' }}">
+      <span class="step-marker">2</span>
+      <span class="step-label">
+        <span class="step-title">Prueba de espirometría</span>
+        <span class="step-sub">Captura de maniobra forzada</span>
+      </span>
+    </a>
+    {% else %}
+    <span class="step disabled" title="Selecciona un paciente para continuar">
+      <span class="step-marker">2</span>
+      <span class="step-label">
+        <span class="step-title">Prueba de espirometría</span>
+        <span class="step-sub">Requiere un paciente activo</span>
+      </span>
+    </span>
+    {% endif %}
+  </nav>
+
+  <div class="topbar-status">
+    <div class="altitud-widget" id="altitud-widget">
+      <button type="button" id="altitud-resumen" class="altitud-resumen">Presión atmosférica —</button>
+      <form id="altitud-form" class="altitud-form" hidden method="post" action="{{ url_for('config_altitud') }}">
+        <label for="altitud-input">Altitud del consultorio (m)</label>
+        <div class="altitud-form-row">
+          <input type="number" id="altitud-input" name="altitud_m" step="1">
+          <button type="submit" class="btn-secondary btn-small">Guardar</button>
+        </div>
+      </form>
     </div>
-    <hr>
-    <p class="menu-label">MENÚ DE OPERACIONES</p>
-    <nav>
-      <a href="{{ url_for('historial') }}" class="nav-btn {{ 'active' if pagina_activa == 'historial' else '' }}">
-        <img src="{{ url_for('static', filename='img/historial.png') }}" width="24" alt="">
-        <span>Historial Clínico (EHR)</span>
-      </a>
-      <a href="{{ url_for('prueba') }}" class="nav-btn {{ 'active' if pagina_activa == 'prueba' else '' }}">
-        <img src="{{ url_for('static', filename='img/espirometria.png') }}" width="24" alt="">
-        <span>Prueba de Espirometría</span>
-      </a>
-    </nav>
-  </aside>
-  <main class="content">
-    {% block content %}{% endblock %}
-  </main>
-</div>
+    <div class="theme-toggle" id="theme-toggle">
+      <button type="button" data-tema="light" title="Tema claro" aria-label="Tema claro">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button type="button" data-tema="dark" title="Tema oscuro" aria-label="Tema oscuro">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="content">
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+  (function () {
+    // Fade de salida antes de navegar entre páginas del stepper: Flask no es
+    // una SPA, así que la navegación sí recarga, pero suaviza la percepción
+    // del salto en vez de un corte brusco a blanco.
+    document.querySelectorAll(".step[href]").forEach(function (enlace) {
+      enlace.addEventListener("click", function (evt) {
+        if (evt.metaKey || evt.ctrlKey || evt.shiftKey || evt.button !== 0) return;
+        evt.preventDefault();
+        document.body.classList.add("saliendo");
+        setTimeout(function () { window.location.href = enlace.href; }, 110);
+      });
+    });
+  })();
+
+  (function () {
+    var root = document.documentElement;
+    var botones = document.querySelectorAll("#theme-toggle button");
+
+    function actualizarActivo() {
+      var actual = root.getAttribute("data-theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      botones.forEach(function (btn) {
+        btn.classList.toggle("active", btn.dataset.tema === actual);
+      });
+    }
+
+    botones.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        root.setAttribute("data-theme", btn.dataset.tema);
+        localStorage.setItem("spiro-tema", btn.dataset.tema);
+        actualizarActivo();
+        document.dispatchEvent(new CustomEvent("spiro-tema-cambiado"));
+      });
+    });
+
+    actualizarActivo();
+  })();
+
+  (function () {
+    var resumen = document.getElementById("altitud-resumen");
+    var form = document.getElementById("altitud-form");
+    var input = document.getElementById("altitud-input");
+    var boton = form.querySelector("button[type=submit]");
+    var textoBotonOriginal = boton.textContent;
+    var url = "{{ url_for('config_altitud') }}";
+
+    function pintarResumen(data) {
+      if (data.altitud_m === null) {
+        resumen.textContent = "Presión atmosférica: nivel del mar";
+        return;
+      }
+      var fuente = data.origen === "ip" ? "IP" : "manual";
+      var ciudad = data.ciudad ? " · " + data.ciudad : "";
+      resumen.textContent =
+        Math.round(data.altitud_m) + " m (" + fuente + ciudad + ") · " + data.presion_kpa + " kPa";
+      input.value = Math.round(data.altitud_m);
+    }
+
+    resumen.addEventListener("click", function () {
+      form.hidden = !form.hidden;
+      if (!form.hidden) input.focus();
+    });
+
+    document.addEventListener("click", function (evt) {
+      var widget = document.getElementById("altitud-widget");
+      if (!form.hidden && !widget.contains(evt.target)) form.hidden = true;
+    });
+
+    form.addEventListener("submit", function (evt) {
+      evt.preventDefault();
+      boton.disabled = true;
+      fetch(url, { method: "POST", body: new FormData(form) })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          pintarResumen(data);
+          boton.textContent = "Guardado";
+          setTimeout(function () {
+            boton.disabled = false;
+            boton.textContent = textoBotonOriginal;
+            form.hidden = true;
+          }, 700);
+        })
+        .catch(function () {
+          boton.disabled = false;
+          boton.textContent = textoBotonOriginal;
+        });
+    });
+
+    fetch(url)
+      .then(function (r) { return r.json(); })
+      .then(pintarResumen)
+      .catch(function () {
+        resumen.textContent = "Presión atmosférica no disponible";
+      });
+  })();
+</script>
 </body>
 </html>

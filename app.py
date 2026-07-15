@@ -14,6 +14,7 @@ import numpy as np
 from flask import Flask, redirect, render_template, request, session, url_for
 from flask_socketio import SocketIO
 
+import altitud
 import config
 import patients
 import processing
@@ -29,10 +30,34 @@ socketio = SocketIO(app, async_mode="threading")
 
 sesiones_activas = {}  # sid -> {"detener", "id_sesion", "siguiente_numero_intento"}
 
+# Estado de la detección de altitud/presión atmosférica por IP, expuesto a la
+# UI para que el operador pueda ver la fuente del valor y corregirlo a mano.
+estado_altitud = {"origen": "manual", "ciudad": None, "altitud_m": None, "presion_kpa": config.PRESION_ATMOSFERICA_KPA}
+
+
+def _detectar_altitud_en_segundo_plano():
+    resultado = altitud.detectar_ubicacion_por_ip()
+    if resultado is None:
+        return
+    config.PRESION_ATMOSFERICA_KPA = resultado["presion_kpa"]
+    estado_altitud.update(
+        origen="ip",
+        ciudad=resultado["ciudad"],
+        altitud_m=resultado["altitud_m"],
+        presion_kpa=resultado["presion_kpa"],
+    )
+
 
 # =====================================================================
 # Rutas HTTP
 # =====================================================================
+@app.context_processor
+def inyectar_paciente_activo():
+    """Disponible en todos los templates para el stepper del header (base.html)."""
+    dni_activo = session.get("paciente_dni")
+    return {"paciente_activo": patients.cargar_paciente(dni_activo) if dni_activo else None}
+
+
 @app.route("/")
 def index():
     return redirect(url_for("historial"))
@@ -53,11 +78,9 @@ def historial():
         session["paciente_dni"] = datos["dni"]
         return redirect(url_for("historial"))
 
-    dni_activo = session.get("paciente_dni")
     return render_template(
         "historial.html",
         pacientes=patients.listar_pacientes(),
-        paciente_activo=patients.cargar_paciente(dni_activo) if dni_activo else None,
         pagina_activa="historial",
     )
 
@@ -67,6 +90,23 @@ def seleccionar_paciente(dni):
     if patients.cargar_paciente(dni) is not None:
         session["paciente_dni"] = dni
     return redirect(url_for("historial"))
+
+
+@app.route("/config/altitud", methods=["GET", "POST"])
+def config_altitud():
+    if request.method == "POST":
+        altitud_m = float(request.form["altitud_m"])
+        presion_kpa = altitud._presion_desde_altitud(altitud_m)
+        config.PRESION_ATMOSFERICA_KPA = presion_kpa
+        estado_altitud.update(origen="manual", ciudad=None, altitud_m=altitud_m, presion_kpa=presion_kpa)
+        logger.info("Presión atmosférica corregida manualmente: altitud=%.0fm, presión=%.3f kPa", altitud_m, presion_kpa)
+
+    return {
+        "origen": estado_altitud["origen"],
+        "ciudad": estado_altitud["ciudad"],
+        "altitud_m": estado_altitud["altitud_m"],
+        "presion_kpa": round(estado_altitud["presion_kpa"], 3),
+    }
 
 
 @app.route("/prueba")
@@ -286,6 +326,11 @@ if __name__ == "__main__":
     if args.test is not None:
         config.MODO_SIMULADO = True
         config.PERFIL_SIMULACION = args.test
+
+    # Detección de altitud por IP en un hilo aparte: no bloquea el arranque
+    # si no hay internet, y el valor manual de config.py sigue siendo válido
+    # mientras tanto (o si el servicio de geolocalización falla).
+    threading.Thread(target=_detectar_altitud_en_segundo_plano, daemon=True).start()
 
     lector.iniciar()
     socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=False)

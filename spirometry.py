@@ -20,12 +20,12 @@ def clasificar_diagnostico(rendimiento_pct, fev1_fvc_pct):
     """FEV1/FVC < 70% es el criterio clínico estándar (GOLD) de patrón obstructivo,
     y se evalúa antes que el PEF porque es el indicador más confiable."""
     if fev1_fvc_pct < 70:
-        return "badge-roja", "🔴 Patrón Obstructivo (FEV1/FVC < 70%)"
+        return "badge-roja", "Patrón obstructivo (FEV1/FVC < 70%)"
     if rendimiento_pct >= 80:
-        return "badge-verde", "🟢 Función Pulmonar Normal"
+        return "badge-verde", "Función pulmonar normal"
     if rendimiento_pct >= 50:
-        return "badge-amarillo", "🟡 Patrón Obstructivo Leve / Alerta"
-    return "badge-roja", "🔴 Restricción Severa / Emergencia"
+        return "badge-amarillo", "Patrón obstructivo leve / alerta"
+    return "badge-roja", "Restricción severa / emergencia"
 
 
 def calcular_fef25_75(tiempo_rel, volumen_rel, fvc):
