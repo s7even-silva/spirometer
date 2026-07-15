@@ -70,7 +70,6 @@ DURACION_MAX_PRUEBA_S = 15.0          # corte de seguridad si nunca baja del umb
 # Sesión de espirometría (múltiples intentos, estándar ATS/ERS simplificado)
 # =====================================================================
 MAX_INTENTOS_POR_SESION = 8
-MIN_INTENTOS_ACEPTABLES_SUGERIDO = 3
 
 # Criterios de aceptabilidad de cada intento (heurística ATS/ERS simplificada).
 FET_MINIMO_ACEPTABLE_S = 3.0           # duración mínima de la espiración activa

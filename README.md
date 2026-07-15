@@ -91,7 +91,6 @@ config.py           Constantes físicas, de hardware y de criterios clínicos
 processing.py       Conversión presión↔flujo, densidad del aire, BTPS, filtros
 spirometry.py       Métricas clínicas, aceptabilidad, repetibilidad, diagnóstico
 patients.py         Persistencia del historial clínico en SQLite (espirometro.db)
-migrar_json_a_sqlite.py  Migración única del formato JSON anterior a SQLite
 serial_reader.py    Lectura continua del puerto serial (o señal simulada)
 perfiles_simulacion.py  Curvas sintéticas de flujo para el modo --test
 altitud.py          Estimación de presión atmosférica por geolocalización IP
@@ -112,16 +111,6 @@ sqlite3 espirometro.db "SELECT dni, nombre FROM pacientes;"
 
 o con una herramienta gráfica como [DB Browser for SQLite](https://sqlitebrowser.org/)
 o la extensión "SQLite Viewer" de VS Code.
-
-Si existen historiales del formato anterior (JSON en `Historiales_Medicos/`),
-se migran una sola vez con:
-
-```bash
-python migrar_json_a_sqlite.py
-```
-
-No borra los archivos JSON originales ni sobrescribe pacientes que ya
-existan en la base.
 
 ## Notas
 
