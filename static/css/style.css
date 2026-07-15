@@ -192,6 +192,40 @@ input, select {
     font-size: 14px;
 }
 
+.contador-intentos {
+    margin-left: 10px;
+    color: #64748B;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------------- */
+/* Intentos de la sesión */
+/* ---------------------------------------------------------------- */
+.lista-intentos {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.badge-intento {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+}
+
+.badge-intento.intento-mejor {
+    border: 2px solid #4F46E5;
+    background-color: #F5F3FF;
+}
+
+.badge-aceptable { background-color: #DCFCE7; color: #15803D; }
+.badge-no-aceptable { background-color: #FEF9C3; color: #A16207; }
+
 /* ---------------------------------------------------------------- */
 /* Tabla de pacientes */
 /* ---------------------------------------------------------------- */

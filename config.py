@@ -20,6 +20,11 @@ RECONEXION_ESPERA_S = 2.0          # segundos entre reintentos si el puerto se d
 # de abrir el puerto real. Útil para desarrollar y probar la UI sin sensor.
 MODO_SIMULADO = True
 
+# Perfil clínico usado por la señal sintética cuando MODO_SIMULADO está activo
+# ("sano" o "copd"; ver perfiles_simulacion.py). Se puede fijar al arrancar con
+# `python app.py --test copd`, lo que sobreescribe este valor en tiempo de ejecución.
+PERFIL_SIMULACION = "sano"
+
 # =====================================================================
 # Geometría del tubo de flujo (tipo Venturi / Pitot con restricción)
 # =====================================================================
@@ -60,3 +65,17 @@ UMBRAL_INICIO_SOPLIDO_L_S = 0.15      # flujo mínimo para considerar que empez�
 UMBRAL_FIN_SOPLIDO_L_S = 0.05         # flujo por debajo del cual se considera que terminó
 UMBRAL_FIN_SOPLIDO_S = 1.0            # segundos sostenidos bajo el umbral para dar la prueba por finalizada
 DURACION_MAX_PRUEBA_S = 15.0          # corte de seguridad si nunca baja del umbral
+
+# =====================================================================
+# Sesión de espirometría (múltiples intentos, estándar ATS/ERS simplificado)
+# =====================================================================
+MAX_INTENTOS_POR_SESION = 8
+MIN_INTENTOS_ACEPTABLES_SUGERIDO = 3
+
+# Criterios de aceptabilidad de cada intento (heurística simplificada, no
+# sustituye el back-extrapolation volumétrico completo del estándar ATS/ERS).
+FET_MINIMO_ACEPTABLE_S = 3.0           # duración mínima de la espiración activa
+VENTANA_MESETA_S = 0.5                 # ventana final para verificar meseta de volumen
+TOLERANCIA_MESETA_VOLUMEN_L = 0.025    # cambio máximo de volumen admitido en esa ventana
+TIEMPO_MAXIMO_PEF_ACEPTABLE_S = 0.5    # el pico debe alcanzarse rápido (esfuerzo explosivo)
+FLUJO_MINIMO_INTERRUPCION_L_S = -1.0   # flujo por debajo de esto sugiere tos/interrupción

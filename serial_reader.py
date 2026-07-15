@@ -7,7 +7,6 @@ de que haya una prueba de espirometría en curso. Mientras no hay ninguna
 sesión de captura activa, mantiene actualizado un offset de calibración
 de cero (promedio de la señal en reposo) para compensar deriva del sensor.
 """
-import math
 import queue
 import threading
 import time
@@ -17,6 +16,7 @@ import numpy as np
 import serial
 
 import config
+import perfiles_simulacion
 import processing
 
 
@@ -75,19 +75,34 @@ class LectorSerial:
     # cuando se abre una sesión de captura (para probar todo el pipeline y la UI)
     # ------------------------------------------------------------------
     def _bucle_simulado(self):
+        """Genera como máximo un soplido sintético por sesión de captura suscrita
+        (una llamada a iniciar_sesion): al terminar, se queda en reposo hasta que
+        esa cola se cierre y una nueva sesión (nuevo intento) se suscriba."""
         rho = processing.calcular_densidad_aire()
         t = 0.0
         t_inicio_soplido = None
+        habia_suscriptor = False
+        soplido_emitido = False
 
         while not self._detener.is_set():
-            if t_inicio_soplido is None and len(self._suscriptores) > 0:
+            hay_suscriptor = len(self._suscriptores) > 0
+            if hay_suscriptor and not habia_suscriptor:
+                soplido_emitido = False
+            habia_suscriptor = hay_suscriptor
+
+            perfil = config.PERFIL_SIMULACION
+            duracion_soplido = perfiles_simulacion.PERFILES[perfil]["duracion_s"]
+
+            if t_inicio_soplido is None and hay_suscriptor and not soplido_emitido:
                 t_inicio_soplido = t
 
-            if t_inicio_soplido is not None and (t - t_inicio_soplido) < 6.0:
+            if t_inicio_soplido is not None and (t - t_inicio_soplido) < duracion_soplido:
                 t_relativo = t - t_inicio_soplido
-                flujo_l_s = 7.8 * (t_relativo / 0.3) * math.exp(1 - t_relativo / 0.3)
+                flujo_l_s = perfiles_simulacion.flujo_objetivo_l_s(perfil, t_relativo)
                 presion_pa = processing.flujo_a_presion(flujo_l_s, rho)
             else:
+                if t_inicio_soplido is not None:
+                    soplido_emitido = True
                 t_inicio_soplido = None
                 presion_pa = float(np.random.normal(0, 0.5))  # ruido de reposo
 

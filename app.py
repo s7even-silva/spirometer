@@ -1,10 +1,13 @@
 """
 Servidor Flask del espirómetro: sirve la página web local, gestiona el
 historial clínico y coordina, vía Socket.IO, la captura en vivo de una
-prueba de espirometría a partir de la lectura continua del puerto serial.
+sesión de espirometría (con varios intentos) a partir de la lectura
+continua del puerto serial.
 """
+import argparse
 import queue
 import threading
+from datetime import datetime
 
 import numpy as np
 from flask import Flask, redirect, render_template, request, session, url_for
@@ -20,7 +23,7 @@ app = Flask(__name__)
 app.secret_key = "spiroIntelli-dev-secret"  # solo para uso local
 socketio = SocketIO(app, async_mode="threading")
 
-sesiones_activas = {}  # sid -> {"detener": threading.Event()}
+sesiones_activas = {}  # sid -> {"detener", "id_sesion", "siguiente_numero_intento"}
 
 
 # =====================================================================
@@ -81,7 +84,16 @@ def prueba():
 # =====================================================================
 # Captura en vivo por Socket.IO
 # =====================================================================
-def ejecutar_captura(sid, dni, pef_teorico):
+def ejecutar_captura(sid, dni, id_sesion, numero_intento, pef_teorico):
+    try:
+        _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico)
+    finally:
+        sesion = sesiones_activas.get(sid)
+        if sesion:
+            sesion["captura_en_curso"] = False
+
+
+def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico):
     cola = lector.iniciar_sesion()
     detener_evento = sesiones_activas[sid]["detener"]
 
@@ -134,7 +146,6 @@ def ejecutar_captura(sid, dni, pef_teorico):
                 break
     finally:
         lector.detener_sesion(cola)
-        sesiones_activas.pop(sid, None)
 
     if not soplido_iniciado:
         socketio.emit("prueba_error", {"mensaje": "No se detectó ningún soplido durante la prueba."}, to=sid)
@@ -154,12 +165,23 @@ def ejecutar_captura(sid, dni, pef_teorico):
         socketio.emit("prueba_error", {"mensaje": str(error)}, to=sid)
         return
 
-    patients.agregar_resultado_prueba(dni, metricas)
-    socketio.emit("prueba_completa", metricas, to=sid)
+    intento = dict(metricas)
+    intento["numero"] = numero_intento
+    intento["fecha"] = datetime.now().isoformat(timespec="seconds")
+    intento["perfil_simulado"] = config.PERFIL_SIMULACION if config.MODO_SIMULADO else None
+
+    registro = patients.agregar_intento(dni, id_sesion, intento)
+    sesion_guardada = next(s for s in registro["sesiones"] if s["id_sesion"] == id_sesion)
+
+    socketio.emit(
+        "intento_completo",
+        {"numero_intento": numero_intento, "sesion": sesion_guardada},
+        to=sid,
+    )
 
 
-@socketio.on("iniciar_prueba")
-def manejar_iniciar_prueba():
+@socketio.on("iniciar_sesion")
+def manejar_iniciar_sesion():
     dni_activo = session.get("paciente_dni")
     paciente = patients.cargar_paciente(dni_activo) if dni_activo else None
     if paciente is None:
@@ -167,8 +189,54 @@ def manejar_iniciar_prueba():
         return
 
     pef_teorico = spirometry.calcular_pef_teorico(paciente["sexo"], paciente["edad"], paciente["estatura"])
-    sesiones_activas[request.sid] = {"detener": threading.Event()}
-    socketio.start_background_task(ejecutar_captura, request.sid, dni_activo, pef_teorico)
+    id_sesion = patients.crear_sesion(dni_activo, pef_teorico)
+    sesiones_activas[request.sid] = {
+        "detener": threading.Event(),
+        "id_sesion": id_sesion,
+        "siguiente_numero_intento": 1,
+    }
+    socketio.emit(
+        "sesion_iniciada",
+        {"id_sesion": id_sesion, "pef_teorico": pef_teorico, "max_intentos": config.MAX_INTENTOS_POR_SESION},
+        to=request.sid,
+    )
+
+
+@socketio.on("iniciar_intento")
+def manejar_iniciar_intento():
+    dni_activo = session.get("paciente_dni")
+    paciente = patients.cargar_paciente(dni_activo) if dni_activo else None
+    sesion = sesiones_activas.get(request.sid)
+    if paciente is None or sesion is None or "id_sesion" not in sesion:
+        socketio.emit("prueba_error", {"mensaje": "No hay una sesión de espirometría activa."}, to=request.sid)
+        return
+
+    if sesion["siguiente_numero_intento"] > config.MAX_INTENTOS_POR_SESION:
+        socketio.emit(
+            "prueba_error",
+            {"mensaje": f"Se alcanzó el máximo de {config.MAX_INTENTOS_POR_SESION} intentos por sesión."},
+            to=request.sid,
+        )
+        return
+
+    if sesion.get("captura_en_curso"):
+        socketio.emit("prueba_error", {"mensaje": "Ya hay una captura en curso."}, to=request.sid)
+        return
+
+    pef_teorico = spirometry.calcular_pef_teorico(paciente["sexo"], paciente["edad"], paciente["estatura"])
+    numero_intento = sesion["siguiente_numero_intento"]
+    sesion["siguiente_numero_intento"] += 1
+    sesion["detener"] = threading.Event()
+    sesion["captura_en_curso"] = True
+
+    socketio.start_background_task(
+        ejecutar_captura, request.sid, dni_activo, sesion["id_sesion"], numero_intento, pef_teorico
+    )
+
+
+@socketio.on("finalizar_sesion")
+def manejar_finalizar_sesion():
+    sesiones_activas.pop(request.sid, None)
 
 
 @socketio.on("detener_prueba")
@@ -185,6 +253,25 @@ def manejar_desconexion():
         sesion["detener"].set()
 
 
+def _parsear_argumentos():
+    parser = argparse.ArgumentParser(description="Servidor del espirómetro digital.")
+    parser.add_argument(
+        "--test",
+        nargs="?",
+        const="sano",
+        choices=["sano", "copd"],
+        default=None,
+        metavar="PERFIL",
+        help="Ejecuta sin hardware con datos sintéticos. PERFIL: sano (default) o copd.",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
+    args = _parsear_argumentos()
+    if args.test is not None:
+        config.MODO_SIMULADO = True
+        config.PERFIL_SIMULACION = args.test
+
     lector.iniciar()
     socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=False)

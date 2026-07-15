@@ -39,7 +39,7 @@
   <h3>Pacientes Registrados</h3>
   <table class="tabla-pacientes">
     <thead>
-      <tr><th>DNI</th><th>Nombre</th><th>Edad</th><th>Sexo</th><th>Pruebas</th><th></th></tr>
+      <tr><th>DNI</th><th>Nombre</th><th>Edad</th><th>Sexo</th><th>Sesiones</th><th></th></tr>
     </thead>
     <tbody>
       {% for p in pacientes %}
@@ -48,7 +48,7 @@
         <td>{{ p.nombre }}</td>
         <td>{{ p.edad }}</td>
         <td>{{ p.sexo }}</td>
-        <td>{{ p.pruebas|length }}</td>
+        <td>{{ p.sesiones|length }}</td>
         <td>
           <form method="post" action="{{ url_for('seleccionar_paciente', dni=p.dni) }}">
             <button type="submit" class="btn-secondary">Seleccionar</button>
