@@ -1,0 +1,8 @@
+torch
+numpy
+pandas
+catboost
+matplotlib
+scipy
+openpyxl
+requests
