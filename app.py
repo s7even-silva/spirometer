@@ -78,9 +78,11 @@ def historial():
         session["paciente_dni"] = datos["dni"]
         return redirect(url_for("historial"))
 
+    pacientes = patients.listar_pacientes()
     return render_template(
         "historial.html",
-        pacientes=patients.listar_pacientes(),
+        pacientes=pacientes,
+        total_sesiones=sum(len(p["sesiones"]) for p in pacientes),
         pagina_activa="historial",
     )
 

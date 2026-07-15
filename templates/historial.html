@@ -5,63 +5,99 @@
   <p>Registro de pacientes indexado por DNI.</p>
 </div>
 
-<div class="card">
-  <form method="post" action="{{ url_for('historial') }}">
-    <div class="form-grid">
-      <div class="form-col">
-        <label>DNI del Paciente</label>
-        <input type="text" name="dni" required value="{{ paciente_activo.dni if paciente_activo else '' }}">
-        <label>Nombre Completo</label>
-        <input type="text" name="nombre" required value="{{ paciente_activo.nombre if paciente_activo else '' }}">
-        <label>Edad (Años)</label>
-        <input type="number" name="edad" min="5" max="100" required value="{{ paciente_activo.edad if paciente_activo else 35 }}">
-      </div>
-      <div class="form-col">
-        <label>Sexo Biológico</label>
-        <select name="sexo">
-          <option {{ "selected" if paciente_activo and paciente_activo.sexo == "Masculino" }}>Masculino</option>
-          <option {{ "selected" if paciente_activo and paciente_activo.sexo == "Femenino" }}>Femenino</option>
-        </select>
-        <label>Estatura (cm)</label>
-        <input type="number" name="estatura" min="100" max="220" required value="{{ paciente_activo.estatura if paciente_activo else 178 }}">
-        <label>Tabaquismo</label>
-        <select name="tabaquismo">
-          <option {{ "selected" if paciente_activo and paciente_activo.tabaquismo == "No Fumador" }}>No Fumador</option>
-          <option {{ "selected" if paciente_activo and paciente_activo.tabaquismo == "Fumador" }}>Fumador</option>
-        </select>
-      </div>
-    </div>
-    <button type="submit" class="btn-primary">Registrar paciente</button>
-  </form>
+<div class="metric-grid metric-grid-compacta">
+  <div class="metric-card">
+    <p class="metric-label">Pacientes registrados</p>
+    <h2>{{ pacientes|length }}</h2>
+  </div>
+  <div class="metric-card">
+    <p class="metric-label">Sesiones totales</p>
+    <h2>{{ total_sesiones }}</h2>
+  </div>
+  <div class="metric-card">
+    <p class="metric-label">Paciente activo</p>
+    <h2 class="metric-card-texto">{{ paciente_activo.nombre if paciente_activo else "Ninguno" }}</h2>
+    <p class="metric-sub">{{ "DNI " + paciente_activo.dni if paciente_activo else "Selecciona uno de la lista" }}</p>
+  </div>
 </div>
 
-<div class="card">
-  <h3>Pacientes Registrados</h3>
-  <div class="tabla-scroll">
-  <table class="tabla-pacientes">
-    <thead>
-      <tr><th>DNI</th><th>Nombre</th><th>Edad</th><th>Sexo</th><th>Sesiones</th><th></th><th></th></tr>
-    </thead>
-    <tbody>
-      {% for p in pacientes %}
-      <tr class="{{ 'fila-activa' if paciente_activo and p.dni == paciente_activo.dni else '' }}">
-        <td>{{ p.dni }}</td>
-        <td>{{ p.nombre }}</td>
-        <td>{{ p.edad }}</td>
-        <td>{{ p.sexo }}</td>
-        <td>{{ p.sesiones|length }}</td>
-        <td>
-          <form method="post" action="{{ url_for('seleccionar_paciente', dni=p.dni) }}">
-            <button type="submit" class="btn-secondary">Seleccionar</button>
-          </form>
-        </td>
-        <td><a href="{{ url_for('historial_paciente', dni=p.dni) }}" class="btn-secondary btn-enlace">Ver historial</a></td>
-      </tr>
-      {% else %}
-      <tr><td colspan="7">Aún no hay pacientes registrados.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="historial-grid">
+  <div class="card">
+    <h3>Registrar paciente</h3>
+    <form method="post" action="{{ url_for('historial') }}">
+      <div class="form-grid form-grid-compacta">
+        <div>
+          <label>DNI del paciente</label>
+          <input type="text" name="dni" required value="{{ paciente_activo.dni if paciente_activo else '' }}">
+        </div>
+        <div>
+          <label>Nombre completo</label>
+          <input type="text" name="nombre" required value="{{ paciente_activo.nombre if paciente_activo else '' }}">
+        </div>
+        <div>
+          <label>Edad (años)</label>
+          <input type="number" name="edad" min="5" max="100" required value="{{ paciente_activo.edad if paciente_activo else 35 }}">
+        </div>
+        <div>
+          <label>Sexo biológico</label>
+          <select name="sexo">
+            <option {{ "selected" if paciente_activo and paciente_activo.sexo == "Masculino" }}>Masculino</option>
+            <option {{ "selected" if paciente_activo and paciente_activo.sexo == "Femenino" }}>Femenino</option>
+          </select>
+        </div>
+        <div>
+          <label>Estatura (cm)</label>
+          <input type="number" name="estatura" min="100" max="220" required value="{{ paciente_activo.estatura if paciente_activo else 178 }}">
+        </div>
+        <div>
+          <label>Tabaquismo</label>
+          <select name="tabaquismo">
+            <option {{ "selected" if paciente_activo and paciente_activo.tabaquismo == "No Fumador" }}>No Fumador</option>
+            <option {{ "selected" if paciente_activo and paciente_activo.tabaquismo == "Fumador" }}>Fumador</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary">Registrar paciente</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Pacientes registrados</h3>
+    <div class="tabla-scroll">
+    <table class="tabla-pacientes">
+      <thead>
+        <tr><th>DNI</th><th>Nombre</th><th>Edad</th><th>Sexo</th><th>Sesiones</th><th>Última sesión</th><th>Diagnóstico</th><th></th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for p in pacientes %}
+        {% set ultima = p.sesiones|sort(attribute='fecha')|last if p.sesiones else None %}
+        <tr class="{{ 'fila-activa' if paciente_activo and p.dni == paciente_activo.dni else '' }}">
+          <td>{{ p.dni }}</td>
+          <td>{{ p.nombre }}</td>
+          <td>{{ p.edad }}</td>
+          <td>{{ p.sexo }}</td>
+          <td>{{ p.sesiones|length }}</td>
+          <td>{{ ultima.fecha if ultima else "—" }}</td>
+          <td>
+            {% if ultima and ultima.resumen %}
+            <span class="status-badge {{ ultima.resumen.clase_badge }}">{{ ultima.resumen.texto_diagnostico }}</span>
+            {% else %}
+            —
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('seleccionar_paciente', dni=p.dni) }}">
+              <button type="submit" class="btn-secondary">Seleccionar</button>
+            </form>
+          </td>
+          <td><a href="{{ url_for('historial_paciente', dni=p.dni) }}" class="btn-secondary btn-enlace">Ver historial</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9">Aún no hay pacientes registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
   </div>
 </div>
 {% endblock %}

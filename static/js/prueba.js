@@ -21,9 +21,30 @@ const stepResultados = document.getElementById("step-resultados");
 
 function redimensionarGraficas(contenedorId) {
     document.querySelectorAll(`#${contenedorId} .js-plotly-plot`).forEach((div) => {
-        Plotly.Plots.resize(div);
+        // Plotly.Plots.resize() no siempre recalcula bien un gauge (type:
+        // "indicator") tras un cambio de devicePixelRatio (zoom con Ctrl+rueda
+        // sin cambiar el tamaño de ventana en px CSS): el número y las
+        // etiquetas del arco quedaban con el layout del zoom anterior. Volver
+        // a llamar Plotly.react con el layout ya guardado fuerza un relayout
+        // completo, que sí recalcula el indicator correctamente.
+        if (div.layout) {
+            Plotly.react(div, div.data, div.layout, PLOTLY_CONFIG);
+        } else {
+            Plotly.Plots.resize(div);
+        }
     });
 }
+
+// ResizeObserver detecta cualquier cambio real de tamaño en píxeles CSS del
+// contenedor, incluido el que provoca el zoom del navegador (Ctrl+rueda),
+// que no siempre dispara el evento "resize" de window de forma fiable.
+const observadorResize = new ResizeObserver((entradas) => {
+    for (const entrada of entradas) {
+        redimensionarGraficas(entrada.target.id);
+    }
+});
+observadorResize.observe(vistaMedicion);
+observadorResize.observe(vistaResultados);
 
 function mostrarVista(nombre) {
     vistaMedicion.hidden = nombre !== "medicion";
@@ -39,25 +60,11 @@ function mostrarVista(nombre) {
     }
 
     // Plotly no redimensiona solo al pasar de hidden a visible (el contenedor
-    // no dispara resize). Se reintenta en dos momentos porque un solo
-    // requestAnimationFrame a veces calcula el ancho antes de que el
-    // navegador termine el reflow (sobre todo con zoom de página activo),
-    // dejando el gauge con las etiquetas del arco cortadas.
+    // no dispara resize), así que se fuerza tras el reflow del navegador. El
+    // ResizeObserver de arriba cubre cambios posteriores (zoom, etc.).
     const contenedorId = nombre === "medicion" ? "vista-medicion" : "vista-resultados";
     requestAnimationFrame(() => redimensionarGraficas(contenedorId));
-    setTimeout(() => redimensionarGraficas(contenedorId), 150);
 }
-
-// Si el usuario hace zoom (Ctrl+rueda) o redimensiona la ventana mientras ya
-// está viendo una vista con gráficos, Plotly no se entera solo: sin este
-// listener el gauge queda con el tamaño calculado para el zoom anterior.
-let resizeTimeout = null;
-window.addEventListener("resize", () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-        redimensionarGraficas(vistaResultados.hidden ? "vista-medicion" : "vista-resultados");
-    }, 150);
-});
 
 vistaTabs.forEach((tab) => {
     tab.addEventListener("click", () => {
