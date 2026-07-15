@@ -19,6 +19,12 @@ const vistaResultados = document.getElementById("vista-resultados");
 const stepMedicion = document.querySelector('.step[data-vista-objetivo="medicion"]');
 const stepResultados = document.getElementById("step-resultados");
 
+function redimensionarGraficas(contenedorId) {
+    document.querySelectorAll(`#${contenedorId} .js-plotly-plot`).forEach((div) => {
+        Plotly.Plots.resize(div);
+    });
+}
+
 function mostrarVista(nombre) {
     vistaMedicion.hidden = nombre !== "medicion";
     vistaResultados.hidden = nombre !== "resultados";
@@ -33,12 +39,25 @@ function mostrarVista(nombre) {
     }
 
     // Plotly no redimensiona solo al pasar de hidden a visible (el contenedor
-    // no dispara resize), así que se fuerza tras el reflow del navegador.
-    requestAnimationFrame(() => {
-        document.querySelectorAll(`#${nombre === "medicion" ? "vista-medicion" : "vista-resultados"} .js-plotly-plot`)
-            .forEach((div) => Plotly.Plots.resize(div));
-    });
+    // no dispara resize). Se reintenta en dos momentos porque un solo
+    // requestAnimationFrame a veces calcula el ancho antes de que el
+    // navegador termine el reflow (sobre todo con zoom de página activo),
+    // dejando el gauge con las etiquetas del arco cortadas.
+    const contenedorId = nombre === "medicion" ? "vista-medicion" : "vista-resultados";
+    requestAnimationFrame(() => redimensionarGraficas(contenedorId));
+    setTimeout(() => redimensionarGraficas(contenedorId), 150);
 }
+
+// Si el usuario hace zoom (Ctrl+rueda) o redimensiona la ventana mientras ya
+// está viendo una vista con gráficos, Plotly no se entera solo: sin este
+// listener el gauge queda con el tamaño calculado para el zoom anterior.
+let resizeTimeout = null;
+window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        redimensionarGraficas(vistaResultados.hidden ? "vista-medicion" : "vista-resultados");
+    }, 150);
+});
 
 vistaTabs.forEach((tab) => {
     tab.addEventListener("click", () => {

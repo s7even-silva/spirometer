@@ -932,7 +932,14 @@ h3 {
     display: inline-block;
 }
 
-/* Diseño exclusivo para escritorio: sin adaptación a pantallas pequeñas. */
+/* Diseño exclusivo para escritorio: sin adaptación a pantallas pequeñas.
+   overflow-x en html (no en body) para que, si el viewport lógico se reduce
+   por zoom del navegador, el scroll horizontal quede contenido de forma
+   consistente en vez de desalinear el header sticky respecto al contenido. */
+html {
+    overflow-x: auto;
+}
+
 body {
     min-width: 1120px;
 }

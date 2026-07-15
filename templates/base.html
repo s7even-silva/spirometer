@@ -36,7 +36,19 @@
     </a>
     <span class="step-connector"></span>
     {% if paciente_activo %}
-    <a href="{{ url_for('prueba') }}" class="step {{ 'active' if pagina_activa == 'prueba' else '' }}" data-vista-objetivo="medicion">
+    {% if pagina_activa == 'prueba' %}
+    <span class="step" data-vista-objetivo="medicion" title="Ya estás en esta página; usa las pestañas de abajo para cambiar de vista">
+      <span class="step-marker">
+        <span class="step-marker-numero">2</span>
+        <svg class="step-marker-check" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8.5l3 3 7-7"/></svg>
+      </span>
+      <span class="step-label">
+        <span class="step-title">Medición</span>
+        <span class="step-sub">Captura de la maniobra</span>
+      </span>
+    </span>
+    {% else %}
+    <a href="{{ url_for('prueba') }}" class="step" data-vista-objetivo="medicion">
       <span class="step-marker">
         <span class="step-marker-numero">2</span>
         <svg class="step-marker-check" viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 8.5l3 3 7-7"/></svg>
@@ -46,6 +58,7 @@
         <span class="step-sub">Captura de la maniobra</span>
       </span>
     </a>
+    {% endif %}
     <span class="step-connector"></span>
     <span class="step disabled" id="step-resultados" title="Completa al menos un intento para ver resultados">
       <span class="step-marker">3</span>
