@@ -1,67 +1,94 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="banner">
-  <h2>Prueba de espirometría</h2>
-  <p>Captura de maniobra forzada y comparación con valores de referencia.</p>
-</div>
 
-<div class="card card-accent">
-  <b>Paciente:</b> {{ paciente.nombre }} &nbsp;|&nbsp;
-  <b>PEF teórico:</b>
-  <span class="texto-acento">{{ "%.2f"|format(pef_teorico) }} L/s</span>
-</div>
-
-<div class="card">
-  <button id="btn-iniciar-sesion" class="btn-primary">Iniciar sesión</button>
-  <button id="btn-nuevo-intento" class="btn-primary" hidden>Repetir intento</button>
-  <button id="btn-detener" class="btn-secondary" disabled>Detener</button>
-  <button id="btn-finalizar-sesion" class="btn-secondary" hidden>Finalizar sesión</button>
-  <span id="contador-intentos" class="contador-intentos"></span>
-  <p id="estado-captura" class="estado"></p>
-</div>
-
-<div class="card">
-  <b>Curva en vivo — flujo / tiempo</b>
-  <div id="grafica-vivo" class="grafica"></div>
-</div>
-
-<div class="card" id="tarjeta-intentos" hidden>
-  <b>Intentos de esta sesión</b>
-  <div id="lista-intentos" class="lista-intentos"></div>
-</div>
-
-<div id="resultados" hidden>
-  <h3>Resultados — mejor intento</h3>
-  <div class="metric-grid">
-    <div class="metric-card">
-      <p class="metric-label">PEF</p>
-      <h2 id="valor-pef">--</h2>
-      <p class="metric-sub">Teórico: <b id="valor-pef-teorico">--</b></p>
-    </div>
-    <div class="metric-card">
-      <p class="metric-label">FVC</p>
-      <h2 id="valor-fvc">--</h2>
-      <p class="metric-sub">FEV1: <b id="valor-fev1">--</b> · FEV1/FVC: <b id="valor-fev1-fvc">--</b></p>
-    </div>
-    <div class="metric-card">
-      <p class="metric-label">Diagnóstico</p>
-      <span id="badge-diagnostico" class="status-badge">--</span>
-      <p class="metric-sub">Referencia: Knudson et al.</p>
-    </div>
+<div class="prueba-header">
+  <div>
+    <h2 class="prueba-titulo">{{ paciente.nombre }}</h2>
+    <p class="prueba-sub">DNI {{ paciente.dni }} · PEF teórico <b class="texto-acento">{{ "%.2f"|format(pef_teorico) }} L/s</b></p>
   </div>
-
-  <h3>Panel de control</h3>
-  <div class="dash-grid">
-    <div class="card"><p class="titulo-card">Rendimiento vs. valor teórico</p><div id="grafica-gauge" class="grafica-pequena"></div></div>
-    <div class="card" id="detalle-analitico"></div>
-  </div>
-
-  <h3>Curvas de la maniobra</h3>
-  <div class="dash-grid">
-    <div class="card"><b>Volumen / tiempo — mejor intento</b><div id="grafica-volumen-tiempo" class="grafica"></div></div>
-    <div class="card"><b>Flujo / volumen — todos los intentos</b><div id="grafica-flujo-volumen" class="grafica"></div></div>
+  <div class="prueba-vista-toggle" id="vista-toggle" hidden>
+    <button type="button" class="vista-tab active" data-vista="medicion">Medición</button>
+    <button type="button" class="vista-tab" data-vista="resultados" id="tab-resultados" disabled>Resultados</button>
   </div>
 </div>
+
+<section id="vista-medicion" class="vista">
+  <div class="medicion-grid">
+    <div class="medicion-col-principal">
+      <div class="card">
+        <div class="controles-fila">
+          <button id="btn-iniciar-sesion" class="btn-primary">Iniciar sesión</button>
+          <button id="btn-nuevo-intento" class="btn-primary" hidden>Repetir intento</button>
+          <button id="btn-detener" class="btn-secondary" disabled>Detener</button>
+          <button id="btn-finalizar-sesion" class="btn-secondary" hidden>Finalizar sesión</button>
+          <span id="contador-intentos" class="contador-intentos"></span>
+        </div>
+        <p id="estado-captura" class="estado"></p>
+      </div>
+
+      <div class="card">
+        <b>Curva en vivo — flujo / tiempo</b>
+        <div id="grafica-vivo" class="grafica grafica-vivo"></div>
+      </div>
+    </div>
+
+    <div class="medicion-col-lateral">
+      <div class="card" id="tarjeta-intentos" hidden>
+        <b>Intentos de esta sesión</b>
+        <div id="lista-intentos" class="lista-intentos"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="vista-resultados" class="vista" hidden>
+  <div class="resultados-grid">
+    <div class="resultados-col-metricas">
+      <div class="metric-grid metric-grid-compacta">
+        <div class="metric-card">
+          <p class="metric-label">PEF</p>
+          <h2 id="valor-pef">--</h2>
+          <p class="metric-sub">Teórico: <b id="valor-pef-teorico">--</b></p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-label">FVC</p>
+          <h2 id="valor-fvc">--</h2>
+          <p class="metric-sub">FEV1: <b id="valor-fev1">--</b> · FEV1/FVC: <b id="valor-fev1-fvc">--</b></p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-label">Diagnóstico</p>
+          <span id="badge-diagnostico" class="status-badge">--</span>
+          <p class="metric-sub">Referencia: Knudson et al.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="titulo-card-izq">Rendimiento vs. valor teórico</p>
+        <div id="grafica-gauge" class="grafica-pequena"></div>
+      </div>
+
+      <div class="card" id="detalle-analitico"></div>
+
+      <div class="card panel-ia">
+        <p class="titulo-card-izq">Análisis por IA</p>
+        <p class="ia-placeholder">
+          Próximamente: predicción de riesgo y patrones asistidos por el modelo
+          DeepSpiro sobre las curvas de esta sesión.
+        </p>
+      </div>
+    </div>
+
+    <div class="resultados-col-curvas">
+      <details class="curvas-detalle" open>
+        <summary>Curvas de la maniobra</summary>
+        <div class="curvas-grid">
+          <div class="card"><b>Volumen / tiempo — mejor intento</b><div id="grafica-volumen-tiempo" class="grafica"></div></div>
+          <div class="card"><b>Flujo / volumen — todos los intentos</b><div id="grafica-flujo-volumen" class="grafica"></div></div>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
 
 <script>
   window.PEF_TEORICO = {{ pef_teorico }};

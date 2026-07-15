@@ -36,26 +36,26 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg: #0B131C;
-        --surface: #142330;
-        --surface-sunken: #0E1922;
-        --ink: #E7EEF3;
-        --ink-muted: #90A6B6;
-        --ink-faint: #5E7789;
-        --border: #253848;
-        --border-strong: #35505F;
+        --bg: #14171A;
+        --surface: #1E2225;
+        --surface-sunken: #17191C;
+        --ink: #EDEEEF;
+        --ink-muted: #9BA3A9;
+        --ink-faint: #6B7278;
+        --border: #2C3033;
+        --border-strong: #3D4246;
 
         --accent: #4FB3DB;
         --accent-hover: #6EC2E4;
-        --accent-soft: #17313E;
+        --accent-soft: #1E2F37;
         --accent-ink: #06212B;
 
         --ok: #45C58C;
-        --ok-soft: #103324;
+        --ok-soft: #16302A;
         --warn: #D9A73B;
-        --warn-soft: #362A0F;
+        --warn-soft: #33291A;
         --critical: #E4726F;
-        --critical-soft: #3A1919;
+        --critical-soft: #351F1F;
 
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
         --shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.35);
@@ -63,26 +63,26 @@
 }
 
 :root[data-theme="dark"] {
-    --bg: #0B131C;
-    --surface: #142330;
-    --surface-sunken: #0E1922;
-    --ink: #E7EEF3;
-    --ink-muted: #90A6B6;
-    --ink-faint: #5E7789;
-    --border: #253848;
-    --border-strong: #35505F;
+    --bg: #14171A;
+    --surface: #1E2225;
+    --surface-sunken: #17191C;
+    --ink: #EDEEEF;
+    --ink-muted: #9BA3A9;
+    --ink-faint: #6B7278;
+    --border: #2C3033;
+    --border-strong: #3D4246;
 
     --accent: #4FB3DB;
     --accent-hover: #6EC2E4;
-    --accent-soft: #17313E;
+    --accent-soft: #1E2F37;
     --accent-ink: #06212B;
 
     --ok: #45C58C;
-    --ok-soft: #103324;
+    --ok-soft: #16302A;
     --warn: #D9A73B;
-    --warn-soft: #362A0F;
+    --warn-soft: #33291A;
     --critical: #E4726F;
-    --critical-soft: #3A1919;
+    --critical-soft: #351F1F;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.35);
@@ -242,7 +242,7 @@ a.step:hover { background-color: var(--surface-sunken); }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 220px;
+    max-width: 160px;
 }
 
 .step.active .step-marker {
@@ -259,13 +259,20 @@ a.step:hover { background-color: var(--surface-sunken); }
     color: var(--ok);
 }
 
+/* El paso 1 (Paciente) solo lleva check en el markup (siempre "done" o "1"),
+   el paso 2 (Medición) alterna número/check por CSS al pasar a "resultados"
+   sin recargar la página, ya que ese cambio ocurre solo en el cliente. */
+.step-marker-check { display: none; }
+.step.done .step-marker-numero { display: none; }
+.step.done .step-marker-check { display: inline-flex; }
+
 .step.disabled {
     cursor: not-allowed;
     opacity: 0.55;
 }
 
 .step-connector {
-    width: 28px;
+    width: 18px;
     height: 1.5px;
     background: var(--border-strong);
     margin: 0 2px;
@@ -277,14 +284,11 @@ a.step:hover { background-color: var(--surface-sunken); }
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
+    min-width: 0;
 }
 
-/* Widget de altitud */
-.altitud-widget {
-    position: relative;
-}
-
-.altitud-resumen {
+/* Botón de altitud en el header, abre el modal (ver más abajo) */
+.altitud-boton {
     background: var(--surface-sunken);
     border: 1px solid var(--border);
     color: var(--ink-muted);
@@ -295,30 +299,79 @@ a.step:hover { background-color: var(--surface-sunken); }
     cursor: pointer;
     font-family: var(--font-ui);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    flex-shrink: 1;
+    min-width: 0;
 }
 
-.altitud-resumen:hover { background: var(--border); color: var(--ink); }
+.altitud-boton:hover { background: var(--border); color: var(--ink); }
 
-.altitud-form {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
+/* ---------------------------------------------------------------- */
+/* Modal genérico (configuración, diálogos) */
+/* ---------------------------------------------------------------- */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow);
-    padding: 14px;
-    width: 220px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(9, 20, 28, 0.42);
+    opacity: 0;
+    transition: opacity 0.15s ease;
 }
 
-.altitud-form label {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 500;
+.modal-backdrop[hidden] { display: none; }
+
+.modal-backdrop.visible { opacity: 1; }
+
+.modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    transform: translateY(6px) scale(0.98);
+    transition: transform 0.15s ease;
+}
+
+.modal-backdrop.visible .modal { transform: translateY(0) scale(1); }
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.modal-header h3 { margin: 0; }
+
+.modal-cerrar {
+    background: transparent;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: inline-flex;
+}
+
+.modal-cerrar:hover { background: var(--surface-sunken); color: var(--ink); }
+
+.modal-descripcion {
+    font-size: 13px;
     color: var(--ink-muted);
+    line-height: 1.5;
+    margin: 0 0 14px;
+}
+
+.altitud-estado-actual {
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    margin: 0 0 4px;
 }
 
 .altitud-form-row {
@@ -326,17 +379,12 @@ a.step:hover { background-color: var(--surface-sunken); }
     gap: 8px;
 }
 
-.altitud-form input {
-    padding: 7px 9px;
-    font-size: 13px;
+.altitud-form-row input {
     min-width: 0;
     flex: 1;
 }
 
-.btn-small {
-    padding: 7px 12px;
-    font-size: 12.5px;
-    margin-left: 0;
+.altitud-form-row button {
     flex-shrink: 0;
 }
 
@@ -374,13 +422,13 @@ a.step:hover { background-color: var(--surface-sunken); }
 /* Contenido */
 /* ---------------------------------------------------------------- */
 .content {
-    max-width: 1240px;
+    max-width: 1320px;
     margin: 0 auto;
-    padding: 32px 28px 56px;
+    padding: 22px 28px 40px;
 }
 
 .banner {
-    margin-bottom: 22px;
+    margin-bottom: 18px;
 }
 
 .banner h2 {
@@ -400,8 +448,8 @@ a.step:hover { background-color: var(--surface-sunken); }
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
-    padding: 22px;
-    margin-bottom: 16px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
 }
 
 .card-accent {
@@ -503,8 +551,13 @@ input:focus, select:focus {
 /* ---------------------------------------------------------------- */
 /* Tabla de pacientes */
 /* ---------------------------------------------------------------- */
+.tabla-scroll {
+    overflow-x: auto;
+}
+
 .tabla-pacientes {
     width: 100%;
+    min-width: 520px;
     border-collapse: collapse;
 }
 
@@ -559,7 +612,7 @@ input:focus, select:focus {
 
 .metric-card {
     background-color: var(--surface);
-    padding: 20px;
+    padding: 14px 16px;
     border-radius: var(--radius);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
@@ -569,22 +622,22 @@ input:focus, select:focus {
 .metric-label {
     color: var(--ink-muted);
     font-weight: 500;
-    font-size: 12.5px;
+    font-size: 11.5px;
     margin: 0;
     letter-spacing: 0.01em;
 }
 
 .metric-sub {
     color: var(--ink-muted);
-    font-size: 12.5px;
-    margin: 8px 0 0;
+    font-size: 11.5px;
+    margin: 6px 0 0;
     font-variant-numeric: tabular-nums;
 }
 
 .metric-card h2 {
-    font-size: 30px;
+    font-size: 24px;
     font-weight: 700;
-    margin: 10px 0;
+    margin: 6px 0;
     font-family: var(--font-mono);
     color: var(--ink);
     letter-spacing: -0.01em;
@@ -597,8 +650,8 @@ input:focus, select:focus {
     margin-bottom: 20px;
 }
 
-.grafica { width: 100%; height: 320px; }
-.grafica-pequena { width: 100%; height: 220px; }
+.grafica { width: 100%; height: 260px; }
+.grafica-pequena { width: 100%; height: 190px; }
 
 /* Oculta el modebar de Plotly: en este panel clínico el zoom/pan de Plotly
    es ruido, no utilidad, y su tema oscuro por defecto desentonaba con el
@@ -660,10 +713,145 @@ h3 {
 .badge-aceptable { background-color: var(--ok-soft); color: var(--ok); }
 .badge-no-aceptable { background-color: var(--warn-soft); color: var(--warn); }
 
-@media (max-width: 900px) {
-    .topbar { flex-wrap: wrap; height: auto; padding: 12px 16px; gap: 12px; }
-    .stepper { order: 3; width: 100%; }
-    .step-sub { max-width: 140px; }
-    .content { padding: 20px 16px 40px; }
-    .form-grid, .dash-grid, .metric-grid, .detalle-grid { grid-template-columns: 1fr; }
+/* ---------------------------------------------------------------- */
+/* Página de prueba: encabezado de paciente + tabs Medición/Resultados */
+/* ---------------------------------------------------------------- */
+.prueba-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.prueba-titulo {
+    margin: 0 0 2px;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+.prueba-sub {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-muted);
+}
+
+.prueba-vista-toggle {
+    display: inline-flex;
+    gap: 2px;
+    background: var(--surface-sunken);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    flex-shrink: 0;
+}
+
+.vista-tab {
+    border: none;
+    background: transparent;
+    color: var(--ink-faint);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+}
+
+.vista-tab.active {
+    background: var(--surface);
+    color: var(--accent);
+    box-shadow: var(--shadow-sm);
+}
+
+.vista-tab:disabled {
+    color: var(--ink-faint);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Paso 2: medición. Columna principal (controles + curva en vivo) más ancha
+   que la lateral (lista de intentos), para no desperdiciar el ancho de
+   pantalla apilando todo en una sola columna. */
+.medicion-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.controles-fila {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.grafica-vivo { height: 360px; }
+
+/* Paso 3: resultados. Métricas + IA a la izquierda (lo que se necesita ver
+   primero), curvas técnicas a la derecha en su propia columna, en vez de
+   apiladas una tras otra obligando a un scroll largo. */
+.resultados-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    min-width: 0;
+}
+
+.metric-grid-compacta { margin-bottom: 14px; }
+
+.titulo-card-izq {
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 13px;
+    margin: 0 0 4px 0;
+}
+
+.panel-ia {
+    border: 1px dashed var(--border-strong);
+    background: var(--surface-sunken);
+}
+
+.ia-placeholder {
+    font-size: 13px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.curvas-detalle summary {
+    cursor: pointer;
+    font-weight: 650;
+    font-size: 14px;
+    color: var(--ink);
+    padding: 4px 0 12px;
+    list-style: none;
+}
+
+.curvas-detalle summary::-webkit-details-marker { display: none; }
+
+.curvas-detalle summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 8px;
+    color: var(--ink-faint);
+    transition: transform 0.15s ease;
+}
+
+.curvas-detalle[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.curvas-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
+/* Diseño exclusivo para escritorio: sin adaptación a pantallas pequeñas. */
+body {
+    min-width: 1120px;
 }

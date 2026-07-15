@@ -122,6 +122,7 @@ def prueba():
         paciente=paciente,
         pef_teorico=pef_teorico,
         pagina_activa="prueba",
+        vista_prueba="medicion",
     )
 
 

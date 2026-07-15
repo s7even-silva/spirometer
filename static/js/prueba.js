@@ -9,7 +9,57 @@ const contadorIntentos = document.getElementById("contador-intentos");
 const estadoCaptura = document.getElementById("estado-captura");
 const tarjetaIntentos = document.getElementById("tarjeta-intentos");
 const listaIntentos = document.getElementById("lista-intentos");
-const resultados = document.getElementById("resultados");
+
+// --- Navegación entre la vista de medición y la de resultados (paso 2 / 3) ---
+const vistaToggle = document.getElementById("vista-toggle");
+const tabResultados = document.getElementById("tab-resultados");
+const vistaTabs = document.querySelectorAll(".vista-tab");
+const vistaMedicion = document.getElementById("vista-medicion");
+const vistaResultados = document.getElementById("vista-resultados");
+const stepMedicion = document.querySelector('.step[data-vista-objetivo="medicion"]');
+const stepResultados = document.getElementById("step-resultados");
+
+function mostrarVista(nombre) {
+    vistaMedicion.hidden = nombre !== "medicion";
+    vistaResultados.hidden = nombre !== "resultados";
+    vistaTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.vista === nombre));
+
+    if (stepMedicion) {
+        stepMedicion.classList.toggle("active", nombre === "medicion");
+        stepMedicion.classList.toggle("done", nombre === "resultados");
+    }
+    if (stepResultados && !stepResultados.classList.contains("disabled")) {
+        stepResultados.classList.toggle("active", nombre === "resultados");
+    }
+
+    // Plotly no redimensiona solo al pasar de hidden a visible (el contenedor
+    // no dispara resize), así que se fuerza tras el reflow del navegador.
+    requestAnimationFrame(() => {
+        document.querySelectorAll(`#${nombre === "medicion" ? "vista-medicion" : "vista-resultados"} .js-plotly-plot`)
+            .forEach((div) => Plotly.Plots.resize(div));
+    });
+}
+
+vistaTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+        if (!tab.disabled) mostrarVista(tab.dataset.vista);
+    });
+});
+
+function habilitarPasoResultados() {
+    vistaToggle.hidden = false;
+    tabResultados.disabled = false;
+    if (stepResultados) {
+        stepResultados.classList.remove("disabled");
+        stepResultados.title = "";
+    }
+}
+
+// Paleta fija para diferenciar cada intento en el overlay flujo-volumen: el
+// mejor PEF siempre usa el color de acento del tema, el resto rota entre
+// estos colores (elegidos con buen contraste en claro y oscuro) en vez de
+// mostrarse todos del mismo gris, que hacía indistinguibles los intentos.
+const PALETA_INTENTOS = ["#B4459A", "#D97706", "#7C5CFC", "#0891B2", "#DB2777", "#65A30D"];
 
 function tema() {
     const estilo = getComputedStyle(document.documentElement);
@@ -54,7 +104,7 @@ let ultimoResumen = null;
 
 document.addEventListener("spiro-tema-cambiado", () => {
     if (ultimoResumen) {
-        mostrarResultados(ultimoResumen.resumen, ultimoResumen.intentos, ultimoResumen.mejorPefNumero);
+        pintarResultados(ultimoResumen.resumen, ultimoResumen.intentos, ultimoResumen.mejorPefNumero);
     }
 });
 
@@ -96,10 +146,12 @@ btnFinalizarSesion.addEventListener("click", () => {
 
 socket.on("sesion_iniciada", (data) => {
     sesionActual = { idSesion: data.id_sesion, intentos: [], maxIntentos: data.max_intentos };
-    resultados.hidden = true;
     tarjetaIntentos.hidden = true;
     listaIntentos.innerHTML = "";
     contadorIntentos.textContent = "";
+    vistaToggle.hidden = true;
+    tabResultados.disabled = true;
+    mostrarVista("medicion");
     iniciarCapturaEnVivo();
     socket.emit("iniciar_intento");
 });
@@ -135,7 +187,15 @@ socket.on("intento_completo", (data) => {
 
     renderizarListaIntentos(data.sesion);
     ultimoResumen = { resumen: data.sesion.resumen, intentos: sesionActual.intentos, mejorPefNumero: data.sesion.mejor_pef_intento };
-    mostrarResultados(ultimoResumen.resumen, ultimoResumen.intentos, ultimoResumen.mejorPefNumero);
+
+    const primerIntento = sesionActual.intentos.length === 1;
+    habilitarPasoResultados();
+    // La vista debe hacerse visible ANTES de dibujar los gráficos: Plotly
+    // calcula el ancho del contenedor en el momento de newPlot, y un div con
+    // hidden (ancho 0) produce un gráfico con tamaño incorrecto que luego
+    // desborda la página aunque el layout ya haya colapsado a una columna.
+    if (primerIntento) mostrarVista("resultados");
+    pintarResultados(ultimoResumen.resumen, ultimoResumen.intentos, ultimoResumen.mejorPefNumero);
 });
 
 function renderizarListaIntentos(sesion) {
@@ -160,8 +220,7 @@ function renderizarListaIntentos(sesion) {
         .join("");
 }
 
-function mostrarResultados(resumen, intentos, mejorPefNumero) {
-    resultados.hidden = false;
+function pintarResultados(resumen, intentos, mejorPefNumero) {
     const t = tema();
 
     document.getElementById("valor-pef").textContent = resumen.pef_real.toFixed(2) + " L/s";
@@ -194,8 +253,9 @@ function mostrarResultados(resumen, intentos, mejorPefNumero) {
                 type: "indicator",
                 mode: "gauge+number+delta",
                 value: resumen.rendimiento_pct,
+                domain: { x: [0, 1], y: [0, 1] },
                 delta: { reference: 100, decreasing: { color: t.critical } },
-                number: { suffix: "%", font: { size: 38, color: t.ink } },
+                number: { suffix: "%", font: { size: 32, color: t.ink } },
                 gauge: {
                     axis: { range: [0, 120], tickvals: [0, 50, 80, 100, 120], tickfont: { color: t.inkMuted, size: 11 } },
                     bar: { color: t.accent, thickness: 0.22 },
@@ -209,7 +269,7 @@ function mostrarResultados(resumen, intentos, mejorPefNumero) {
                 },
             },
         ],
-        { margin: { l: 34, r: 34, t: 20, b: 10 }, height: 220, paper_bgcolor: "rgba(0,0,0,0)" },
+        { margin: { l: 40, r: 40, t: 16, b: 8 }, height: 190, autosize: true, paper_bgcolor: "rgba(0,0,0,0)" },
         PLOTLY_CONFIG
     );
 
@@ -252,7 +312,7 @@ function mostrarResultados(resumen, intentos, mejorPefNumero) {
 }
 
 function renderizarOverlayFlujoVolumen(intentos, mejorPefNumero, layoutCurvas, t) {
-    const trazas = intentos.map((intento) => {
+    const trazas = intentos.map((intento, idx) => {
         const esMejor = intento.numero === mejorPefNumero;
         return {
             x: intento.volumen,
@@ -260,11 +320,11 @@ function renderizarOverlayFlujoVolumen(intentos, mejorPefNumero, layoutCurvas, t
             mode: "lines",
             name: `Intento ${intento.numero}`,
             line: {
-                color: esMejor ? t.accent : t.inkMuted,
-                width: esMejor ? 2.5 : 1.25,
+                color: esMejor ? t.accent : PALETA_INTENTOS[idx % PALETA_INTENTOS.length],
+                width: esMejor ? 3 : 1.75,
                 shape: "spline",
             },
-            opacity: esMejor ? 1 : 0.45,
+            opacity: esMejor ? 1 : 0.75,
         };
     });
 
