@@ -168,34 +168,35 @@ def process_acceleration(row):
 def preprocess_data(input_path, age, sex, smoke):
     if input_path.endswith('.xlsx'):
         df = pd.read_excel(input_path)
-    if input_path.endswith('.csv'):
+    elif input_path.endswith('.csv'):
         df = pd.read_csv(input_path)
-        if len(df) == 1:
-            row = df.iloc[0]
-            row = process_data(row)
-            row = process_acceleration(row)
-            processed_data = pd.Series(dtype='float64')
-            processed_data['flow_volume'] = row['flow_volume']
-            processed_data['PEF_FEF25'] = row['PEF_FEF25'].values[0]
-            processed_data['FEF25_FEF50'] = row['FEF25_FEF50'].values[0]
-            processed_data['FEF50_FEF75'] = row['FEF50_FEF75'].values[0]
-            processed_data['FEF75'] = row['FEF75'].values[0]
-            processed_data['PEF_FEF75'] = row['PEF_FEF75'].values[0]
-            processed_data['TOTAL'] = row['TOTAL'].values[0]
-            processed_data['AGE'] = age
-            processed_data['SEX'] = sex
-            processed_data['smoke'] = smoke
-            processed_data['blow_ratio'] = 1 - (row['FEV1'] / row['FVC'])
-            processed_data['fef25'] = row['blow_fef25']
-            processed_data['fef50'] = row['blow_fef50']
-            processed_data['fef75'] = row['blow_fef75']
-            processed_data['FEV1'] = row['FEV1']
-            processed_data['FVC'] = row['FVC']
-            return processed_data
-        else:
-            AssertionError("Error: Only one row of data is supported.")
     else:
-        AssertionError("Error: Unsupported file format.")
+        raise ValueError("Error: Unsupported file format.")
+
+    if len(df) != 1:
+        raise ValueError("Error: Only one row of data is supported.")
+
+    row = df.iloc[0]
+    row = process_data(row)
+    row = process_acceleration(row)
+    processed_data = pd.Series(dtype='float64')
+    processed_data['flow_volume'] = row['flow_volume']
+    processed_data['PEF_FEF25'] = row['PEF_FEF25'].values[0]
+    processed_data['FEF25_FEF50'] = row['FEF25_FEF50'].values[0]
+    processed_data['FEF50_FEF75'] = row['FEF50_FEF75'].values[0]
+    processed_data['FEF75'] = row['FEF75'].values[0]
+    processed_data['PEF_FEF75'] = row['PEF_FEF75'].values[0]
+    processed_data['TOTAL'] = row['TOTAL'].values[0]
+    processed_data['AGE'] = age
+    processed_data['SEX'] = sex
+    processed_data['smoke'] = smoke
+    processed_data['blow_ratio'] = 1 - (row['FEV1'] / row['FVC'])
+    processed_data['fef25'] = row['blow_fef25']
+    processed_data['fef50'] = row['blow_fef50']
+    processed_data['fef75'] = row['blow_fef75']
+    processed_data['FEV1'] = row['FEV1']
+    processed_data['FVC'] = row['FVC']
+    return processed_data
 
 
 def load_spiro_encoder(device_str, model_path):

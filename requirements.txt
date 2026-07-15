@@ -4,3 +4,9 @@ simple-websocket
 pyserial
 numpy
 requests
+torch
+pandas
+catboost
+matplotlib
+scipy
+openpyxl

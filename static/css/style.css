@@ -861,6 +861,34 @@ h3 {
     margin: 0;
 }
 
+.ia-aviso {
+    font-size: 12px;
+    color: var(--warn);
+    background: var(--warn-soft);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    margin: 0 0 10px;
+    line-height: 1.4;
+}
+
+.ia-deteccion {
+    margin-bottom: 6px;
+}
+
+.ia-riesgo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+    text-align: center;
+}
+
+.ia-riesgo-grid b {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+}
+
 .curvas-detalle summary {
     cursor: pointer;
     font-weight: 650;

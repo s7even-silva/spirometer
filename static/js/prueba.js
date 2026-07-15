@@ -285,6 +285,8 @@ function pintarResultados(resumen, intentos, mejorPefNumero) {
             <div><p class="metric-label">Repetibilidad entre intentos</p><b>${repetibilidadTexto}</b></div>
         </div>`;
 
+    pintarPanelIA(intentos.find((i) => i.es_mejor_fvc) || intentos[intentos.length - 1]);
+
     Plotly.newPlot(
         "grafica-gauge",
         [
@@ -348,6 +350,47 @@ function pintarResultados(resumen, intentos, mejorPefNumero) {
     );
 
     renderizarOverlayFlujoVolumen(intentos, mejorPefNumero, layoutCurvas, t);
+}
+
+function pintarPanelIA(intento) {
+    const contenedor = document.getElementById("ia-contenido");
+    const ia = intento.ia;
+
+    if (!ia || !ia.disponible) {
+        const motivo = ia && ia.motivo ? ia.motivo : "El modelo de IA no está disponible en este servidor.";
+        contenedor.innerHTML = `<p class="ia-placeholder">${motivo}</p>`;
+        return;
+    }
+
+    const avisoSimulado = intento.perfil_simulado
+        ? `<p class="ia-aviso">Intento generado en modo simulación (perfil "${intento.perfil_simulado}"):
+           esta predicción no es representativa de un caso real, solo sirve para verificar
+           que el pipeline de IA funciona.</p>`
+        : "";
+
+    const badgeDeteccion = ia.copd_detectado
+        ? `<span class="status-badge badge-roja">Patrón sugestivo de EPOC</span>`
+        : `<span class="status-badge badge-verde">Sin señal de EPOC activo</span>`;
+
+    let filaRiesgo = "";
+    if (!ia.copd_detectado && ia.riesgo_1_5_anios) {
+        const [r1, r2, r3, r4, r5] = ia.riesgo_1_5_anios;
+        filaRiesgo = `
+            <p class="metric-label" style="margin-top: 10px;">Riesgo futuro estimado (SpiroPredictor)</p>
+            <div class="ia-riesgo-grid">
+                <div><p class="metric-label">1 año</p><b>${(r1 * 100).toFixed(1)}%</b></div>
+                <div><p class="metric-label">2 años</p><b>${(r2 * 100).toFixed(1)}%</b></div>
+                <div><p class="metric-label">3 años</p><b>${(r3 * 100).toFixed(1)}%</b></div>
+                <div><p class="metric-label">4 años</p><b>${(r4 * 100).toFixed(1)}%</b></div>
+                <div><p class="metric-label">5+ años</p><b>${(r5 * 100).toFixed(1)}%</b></div>
+            </div>`;
+    }
+
+    contenedor.innerHTML = `
+        ${avisoSimulado}
+        <div class="ia-deteccion">${badgeDeteccion}</div>
+        <p class="metric-sub">Basado en el intento ${intento.numero} (mejor FVC de la sesión).</p>
+        ${filaRiesgo}`;
 }
 
 function renderizarOverlayFlujoVolumen(intentos, mejorPefNumero, layoutCurvas, t) {

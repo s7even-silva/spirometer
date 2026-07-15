@@ -35,6 +35,11 @@ de referencia.
 - **Modo de simulación** (`--test`) para desarrollar y probar sin hardware
   conectado, con perfiles sintéticos de paciente sano y de patrón
   obstructivo (COPD).
+- **Detección y predicción de riesgo de EPOC por IA** (modelo DeepSpiro,
+  ver más abajo): para cada intento aceptable de la sesión, se ejecuta el
+  pipeline SpiroEncoder → SpiroExplainer (detección) → SpiroPredictor
+  (riesgo a 1-5 años si no se detecta EPOC activo), mostrado en un panel
+  dedicado en la vista de resultados.
 - Interfaz con modo claro/oscuro y gráficas en vivo (Plotly) de flujo,
   volumen y el lazo flujo-volumen.
 
@@ -93,10 +98,12 @@ spirometry.py       Métricas clínicas, aceptabilidad, repetibilidad, diagnóst
 patients.py         Persistencia del historial clínico en SQLite (espirometro.db)
 serial_reader.py    Lectura continua del puerto serial (o señal simulada)
 perfiles_simulacion.py  Curvas sintéticas de flujo para el modo --test
+deepspiro_ia.py     Integración con el modelo DeepSpiro (detección/predicción EPOC)
 altitud.py          Estimación de presión atmosférica por geolocalización IP
 logging_config.py   Configuración de logs (consola + archivo rotativo)
 templates/          Vistas Jinja (historial, prueba, layout base)
 static/             CSS, JS del cliente e imágenes
+COPD-Early-Prediction/  Modelo DeepSpiro de terceros (pesos + código vendido)
 ```
 
 ## Base de datos
@@ -112,12 +119,50 @@ sqlite3 espirometro.db "SELECT dni, nombre FROM pacientes;"
 o con una herramienta gráfica como [DB Browser for SQLite](https://sqlitebrowser.org/)
 o la extensión "SQLite Viewer" de VS Code.
 
+## IA de detección y predicción de EPOC (DeepSpiro)
+
+El directorio `COPD-Early-Prediction/` contiene el código y los pesos de
+DeepSpiro (Mei et al., *"[Deep Learning for Detecting and Early
+Predicting Chronic Obstructive Pulmonary Disease from Spirogram Time
+Series](https://doi.org/10.1038/s41540-025-00489-y)"*, 2025), usado sin
+modificaciones en su lógica de modelado. `deepspiro_ia.py` es el
+adaptador que mapea la curva ya calculada por nuestro propio pipeline
+(`spirometry.calcular_metricas`) al formato de entrada que ese modelo
+espera, y llama directamente a sus funciones de preprocesamiento e
+inferencia originales (`process_data`, `run_spiro_encoder`,
+`run_spiro_explainer`, `run_spiro_predictor`). No se reentrenó ni se
+ajustaron (fine-tuning) los pesos: el modelo se usa tal cual viene
+pre-entrenado.
+
+El único cambio a código de terceros es una corrección de un bug real en
+`COPD-Early-Prediction/utils/predict_utils.py` (`preprocess_data`): la
+rama de carga de archivos `.xlsx` estaba rota (el procesamiento estaba
+anidado solo bajo la rama `.csv`), lo que hacía que cargar el propio
+ejemplo `.xlsx` de su documentación devolviera `None`.
+
+Los modelos se cargan una sola vez al arrancar el servidor (en un hilo
+aparte, sin bloquear el arranque) y detectan automáticamente si hay GPU
+disponible (CUDA), usando CPU si no la hay. Si los pesos o las
+dependencias no están disponibles, la predicción por IA queda
+deshabilitada sin afectar el resto de la aplicación.
+
+**Solo se ejecuta sobre intentos aceptables** (misma validación ATS/ERS
+que ya usa la app): un intento descartado por nuestros propios criterios
+de calidad no es una entrada confiable para el modelo tampoco.
+
+**Importante**: en modo de simulación (`--test`), el panel de IA muestra
+un aviso explícito de que el resultado no es representativo de un caso
+real. Los perfiles sintéticos (`perfiles_simulacion.py`) están ajustados
+para ser fisiológicamente plausibles (FVC dentro del rango de
+entrenamiento del modelo), pero siguen siendo curvas generadas por una
+fórmula matemática, no de un pulmón real — el modelo puede dar una
+predicción con aparente confianza sobre ellas sin que eso tenga validez
+clínica. Ese aviso solo debe aparecer con `--test`; con datos de un
+paciente real (hardware conectado) no se muestra.
+
 ## Notas
 
 - `Historiales_Medicos/`, `logs/`, `venv/` y `espirometro.db` están
   excluidos del control de versiones (ver `.gitignore`); son datos/
   artefactos locales.
-- El directorio `COPD-Early-Prediction/` contiene un modelo de terceros
-  (DeepSpiro) para predicción de riesgo de EPOC a partir de curvas de
-  espirometría. Todavía no está integrado con esta aplicación.
 - La interfaz está diseñada para escritorio; no es responsiva.

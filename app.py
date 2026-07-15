@@ -16,6 +16,7 @@ from flask_socketio import SocketIO
 
 import altitud
 import config
+import deepspiro_ia
 import patients
 import processing
 import spirometry
@@ -234,6 +235,16 @@ def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico):
     intento["fecha"] = datetime.now().isoformat(timespec="seconds")
     intento["perfil_simulado"] = config.PERFIL_SIMULACION if config.MODO_SIMULADO else None
 
+    if metricas["aceptable"]:
+        paciente = patients.cargar_paciente(dni)
+        intento["ia"] = deepspiro_ia.predecir(metricas, paciente)
+    else:
+        # Con una maniobra ya marcada como no aceptable por nuestros propios
+        # criterios ATS/ERS, la curva no es confiable para el modelo tampoco:
+        # no tiene sentido gastar la inferencia ni mostrar un resultado que
+        # partiría de datos de entrada ya sabidos como deficientes.
+        intento["ia"] = {"disponible": False, "motivo": "Intento no aceptable: la curva no es confiable para la IA."}
+
     registro = patients.agregar_intento(dni, id_sesion, intento)
     sesion_guardada = next(s for s in registro["sesiones"] if s["id_sesion"] == id_sesion)
 
@@ -355,5 +366,11 @@ if __name__ == "__main__":
     # mientras tanto (o si el servicio de geolocalización falla).
     threading.Thread(target=_detectar_altitud_en_segundo_plano, daemon=True).start()
 
+    # Carga de los modelos DeepSpiro en un hilo aparte: tarda unos segundos
+    # (red neuronal + 2 modelos CatBoost) y no debe demorar el arranque del
+    # servidor. Si falla (pesos ausentes, dependencias no instaladas), la
+    # predicción por IA queda deshabilitada sin afectar el resto de la app.
+    threading.Thread(target=deepspiro_ia._cargar_modelos, daemon=True).start()
+
     lector.iniciar()
-    socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=False)
+    socketio.run(app, host="127.0.0.1", port=5000, debug=True, use_reloader=False, allow_unsafe_werkzeug=True)
