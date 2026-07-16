@@ -10,15 +10,15 @@ ninguno de estos números está calibrado, son valores de ejemplo.
 # =====================================================================
 # Comunicación serial
 # =====================================================================
-SERIAL_PORT = "COM4"
-BAUD_RATE = 115200
+SERIAL_PORT = "COM18"
+BAUD_RATE = 9600
 SAMPLE_INTERVAL_S = 0.010          # 10 ms => 100 Hz, cadencia de envío del microcontrolador
 SERIAL_TIMEOUT_S = 1.0
 RECONEXION_ESPERA_S = 2.0          # segundos entre reintentos si el puerto se desconecta
 
 # Si no hay hardware conectado, genera una señal sintética de soplido en vez
 # de abrir el puerto real. Útil para desarrollar y probar la UI sin sensor.
-MODO_SIMULADO = True
+MODO_SIMULADO = False
 
 # Perfil clínico usado por la señal sintética cuando MODO_SIMULADO está activo
 # ("sano" o "copd"; ver perfiles_simulacion.py). Se puede fijar al arrancar con
