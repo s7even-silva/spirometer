@@ -10,7 +10,7 @@ ninguno de estos números está calibrado, son valores de ejemplo.
 # =====================================================================
 # Comunicación serial
 # =====================================================================
-SERIAL_PORT = "COM18"
+SERIAL_PORT = "COM20"
 BAUD_RATE = 9600
 SAMPLE_INTERVAL_S = 0.010          # 10 ms => 100 Hz, cadencia de envío del microcontrolador
 SERIAL_TIMEOUT_S = 1.0
