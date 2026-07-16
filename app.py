@@ -141,22 +141,25 @@ def prueba():
         pef_teorico=pef_teorico,
         pagina_activa="prueba",
         vista_prueba="medicion",
+        duracion_default_s=config.DURACION_MAX_PRUEBA_S,
+        duracion_min_s=config.DURACION_INTENTO_MIN_S,
+        duracion_max_s=config.DURACION_INTENTO_MAX_S,
     )
 
 
 # =====================================================================
 # Captura en vivo por Socket.IO
 # =====================================================================
-def ejecutar_captura(sid, dni, id_sesion, numero_intento, pef_teorico):
+def ejecutar_captura(sid, dni, id_sesion, numero_intento, pef_teorico, duracion_max_s):
     try:
-        _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico)
+        _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico, duracion_max_s)
     finally:
         sesion = sesiones_activas.get(sid)
         if sesion:
             sesion["captura_en_curso"] = False
 
 
-def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico):
+def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico, duracion_max_s):
     cola = lector.iniciar_sesion()
     detener_evento = sesiones_activas[sid]["detener"]
 
@@ -205,7 +208,7 @@ def _ejecutar_captura_interno(sid, dni, id_sesion, numero_intento, pef_teorico):
                 elif t_rel - tiempo_bajo_umbral >= config.UMBRAL_FIN_SOPLIDO_S:
                     break
 
-            if t_rel >= config.DURACION_MAX_PRUEBA_S:
+            if t_rel >= duracion_max_s:
                 break
     finally:
         lector.detener_sesion(cola)
@@ -287,8 +290,18 @@ def manejar_iniciar_sesion(data=None):
     )
 
 
+def _validar_duracion_intento(valor_solicitado):
+    """Convierte y acota a rango seguro la duración pedida por el operador,
+    devolviendo el default de config.py si falta o no es un número válido."""
+    try:
+        duracion = float(valor_solicitado)
+    except (TypeError, ValueError):
+        return config.DURACION_MAX_PRUEBA_S
+    return max(config.DURACION_INTENTO_MIN_S, min(duracion, config.DURACION_INTENTO_MAX_S))
+
+
 @socketio.on("iniciar_intento")
-def manejar_iniciar_intento():
+def manejar_iniciar_intento(data=None):
     dni_activo = session.get("paciente_dni")
     paciente = patients.cargar_paciente(dni_activo) if dni_activo else None
     sesion = sesiones_activas.get(request.sid)
@@ -309,13 +322,14 @@ def manejar_iniciar_intento():
         return
 
     pef_teorico = spirometry.calcular_pef_teorico(paciente["sexo"], paciente["edad"], paciente["estatura"])
+    duracion_max_s = _validar_duracion_intento((data or {}).get("duracion_s"))
     numero_intento = sesion["siguiente_numero_intento"]
     sesion["siguiente_numero_intento"] += 1
     sesion["detener"] = threading.Event()
     sesion["captura_en_curso"] = True
 
     socketio.start_background_task(
-        ejecutar_captura, request.sid, dni_activo, sesion["id_sesion"], numero_intento, pef_teorico
+        ejecutar_captura, request.sid, dni_activo, sesion["id_sesion"], numero_intento, pef_teorico, duracion_max_s
     )
 
 

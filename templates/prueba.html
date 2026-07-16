@@ -23,6 +23,19 @@
           </label>
           <input type="datetime-local" id="fecha-manual-input" class="fecha-manual-input" disabled>
         </div>
+        <div class="fecha-manual-fila">
+          <label class="fecha-manual-check" for="duracion-intento-input">
+            Duración máxima del intento (s)
+          </label>
+          <input
+            type="number"
+            id="duracion-intento-input"
+            class="fecha-manual-input"
+            value="{{ duracion_default_s }}"
+            min="{{ duracion_min_s }}"
+            max="{{ duracion_max_s }}"
+            step="1">
+        </div>
         <div class="controles-fila">
           <button id="btn-iniciar-sesion" class="btn-primary">Iniciar sesión</button>
           <button id="btn-nuevo-intento" class="btn-primary" hidden>Repetir intento</button>

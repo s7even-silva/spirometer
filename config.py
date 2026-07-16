@@ -64,7 +64,14 @@ VENTANA_FILTRO_MEDIA_MOVIL = 5        # nº de muestras para suavizar la señal 
 UMBRAL_INICIO_SOPLIDO_L_S = 0.15      # flujo mínimo para considerar que empezó el soplido
 UMBRAL_FIN_SOPLIDO_L_S = 0.05         # flujo por debajo del cual se considera que terminó
 UMBRAL_FIN_SOPLIDO_S = 1.0            # segundos sostenidos bajo el umbral para dar la prueba por finalizada
-DURACION_MAX_PRUEBA_S = 15.0          # corte de seguridad si nunca baja del umbral
+
+# Corte de seguridad por duración si el flujo nunca baja del umbral de fin de
+# soplido. El operador puede fijar este valor por intento desde la UI (dentro
+# de [DURACION_INTENTO_MIN_S, DURACION_INTENTO_MAX_S]); este es solo el valor
+# por defecto que se precarga en el formulario.
+DURACION_MAX_PRUEBA_S = 15.0
+DURACION_INTENTO_MIN_S = 3.0
+DURACION_INTENTO_MAX_S = 60.0
 
 # =====================================================================
 # Sesión de espirometría (múltiples intentos, estándar ATS/ERS simplificado)

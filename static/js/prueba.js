@@ -9,6 +9,7 @@ const contadorIntentos = document.getElementById("contador-intentos");
 const estadoCaptura = document.getElementById("estado-captura");
 const tarjetaIntentos = document.getElementById("tarjeta-intentos");
 const listaIntentos = document.getElementById("lista-intentos");
+const duracionIntentoInput = document.getElementById("duracion-intento-input");
 
 // --- Navegación entre la vista de medición y la de resultados (paso 2 / 3) ---
 const vistaToggle = document.getElementById("vista-toggle");
@@ -147,6 +148,11 @@ function iniciarCapturaEnVivo() {
     btnNuevoIntento.disabled = true;
     btnDetener.disabled = false;
     btnFinalizarSesion.disabled = true;
+    duracionIntentoInput.disabled = true;
+}
+
+function duracionIntentoSolicitada() {
+    return duracionIntentoInput.value ? Number(duracionIntentoInput.value) : null;
 }
 
 const usarFechaManual = document.getElementById("usar-fecha-manual");
@@ -168,8 +174,9 @@ btnIniciarSesion.addEventListener("click", () => {
 });
 
 btnNuevoIntento.addEventListener("click", () => {
+    const duracion_s = duracionIntentoSolicitada();
     iniciarCapturaEnVivo();
-    socket.emit("iniciar_intento");
+    socket.emit("iniciar_intento", { duracion_s });
 });
 
 btnDetener.addEventListener("click", () => {
@@ -191,8 +198,9 @@ socket.on("sesion_iniciada", (data) => {
     vistaToggle.hidden = true;
     tabResultados.disabled = true;
     mostrarVista("medicion");
+    const duracion_s = duracionIntentoSolicitada();
     iniciarCapturaEnVivo();
-    socket.emit("iniciar_intento");
+    socket.emit("iniciar_intento", { duracion_s });
 });
 
 socket.on("punto_en_vivo", (punto) => {
@@ -204,6 +212,7 @@ socket.on("prueba_error", (data) => {
     btnIniciarSesion.disabled = false;
     btnNuevoIntento.disabled = false;
     btnDetener.disabled = true;
+    duracionIntentoInput.disabled = false;
 });
 
 socket.on("intento_completo", (data) => {
@@ -212,6 +221,7 @@ socket.on("intento_completo", (data) => {
     btnIniciarSesion.disabled = true;
     btnNuevoIntento.disabled = false;
     btnDetener.disabled = true;
+    duracionIntentoInput.disabled = false;
 
     const alMaximo = sesionActual.intentos.length >= sesionActual.maxIntentos;
     btnNuevoIntento.hidden = alMaximo;
