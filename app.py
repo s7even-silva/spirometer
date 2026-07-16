@@ -13,6 +13,7 @@ from datetime import datetime
 import numpy as np
 from flask import Flask, redirect, render_template, request, session, url_for
 from flask_socketio import SocketIO
+from serial.tools import list_ports
 
 import altitud
 import config
@@ -124,6 +125,22 @@ def config_altitud():
         "ciudad": estado_altitud["ciudad"],
         "altitud_m": estado_altitud["altitud_m"],
         "presion_kpa": round(estado_altitud["presion_kpa"], 3),
+    }
+
+
+@app.route("/config/puerto_serial", methods=["GET", "POST"])
+def config_puerto_serial():
+    if request.method == "POST":
+        puerto = request.form["puerto"].strip()
+        config.SERIAL_PORT = puerto
+        config.MODO_SIMULADO = False
+        lector.reiniciar()
+        logger.info("Puerto serial cambiado a %s desde la interfaz", puerto)
+
+    return {
+        "puerto_actual": config.SERIAL_PORT,
+        "modo_simulado": config.MODO_SIMULADO,
+        "puertos_disponibles": [p.device for p in list_ports.comports()],
     }
 
 
