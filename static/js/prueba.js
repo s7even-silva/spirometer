@@ -11,6 +11,62 @@ const tarjetaIntentos = document.getElementById("tarjeta-intentos");
 const listaIntentos = document.getElementById("lista-intentos");
 const duracionIntentoInput = document.getElementById("duracion-intento-input");
 
+// --- Selección de puerto serial ---
+const puertoSerialSelect = document.getElementById("puerto-serial-select");
+const btnRefrescarPuertos = document.getElementById("btn-refrescar-puertos");
+const btnConectarPuerto = document.getElementById("btn-conectar-puerto");
+const puertoSerialEstado = document.getElementById("puerto-serial-estado");
+const URL_PUERTO_SERIAL = "/config/puerto_serial";
+
+function pintarEstadoPuerto(data) {
+    const opcionesActuales = Array.from(puertoSerialSelect.options).map((o) => o.value);
+    const puertos = data.puertos_disponibles || [];
+    if (opcionesActuales.join(",") !== puertos.join(",")) {
+        puertoSerialSelect.innerHTML = "";
+        if (puertos.length === 0) {
+            puertoSerialSelect.appendChild(new Option("Sin puertos detectados", ""));
+        } else {
+            puertos.forEach((p) => puertoSerialSelect.appendChild(new Option(p, p)));
+        }
+    }
+    if (puertos.includes(data.puerto_actual)) {
+        puertoSerialSelect.value = data.puerto_actual;
+    }
+    puertoSerialEstado.textContent = data.modo_simulado
+        ? "Modo simulación activo"
+        : `Conectado a ${data.puerto_actual}`;
+}
+
+function cargarPuertosSeriales() {
+    fetch(URL_PUERTO_SERIAL)
+        .then((r) => r.json())
+        .then(pintarEstadoPuerto)
+        .catch(() => { puertoSerialEstado.textContent = "No se pudo consultar el puerto serial."; });
+}
+
+btnRefrescarPuertos.addEventListener("click", cargarPuertosSeriales);
+
+btnConectarPuerto.addEventListener("click", () => {
+    const puerto = puertoSerialSelect.value;
+    if (!puerto) return;
+    btnConectarPuerto.disabled = true;
+    puertoSerialEstado.textContent = "Conectando...";
+    const cuerpo = new FormData();
+    cuerpo.append("puerto", puerto);
+    fetch(URL_PUERTO_SERIAL, { method: "POST", body: cuerpo })
+        .then((r) => r.json())
+        .then((data) => {
+            pintarEstadoPuerto(data);
+            btnConectarPuerto.disabled = false;
+        })
+        .catch(() => {
+            puertoSerialEstado.textContent = "No se pudo cambiar el puerto serial.";
+            btnConectarPuerto.disabled = false;
+        });
+});
+
+cargarPuertosSeriales();
+
 // --- Navegación entre la vista de medición y la de resultados (paso 2 / 3) ---
 const vistaToggle = document.getElementById("vista-toggle");
 const tabResultados = document.getElementById("tab-resultados");

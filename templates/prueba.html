@@ -16,6 +16,13 @@
   <div class="medicion-grid">
     <div class="medicion-col-principal">
       <div class="card">
+        <div class="puerto-serial-fila">
+          <label for="puerto-serial-select">Puerto serial</label>
+          <select id="puerto-serial-select"></select>
+          <button type="button" id="btn-refrescar-puertos" class="btn-secondary btn-pequeno">Actualizar</button>
+          <button type="button" id="btn-conectar-puerto" class="btn-secondary btn-pequeno">Conectar</button>
+          <span id="puerto-serial-estado" class="estado"></span>
+        </div>
         <div class="fecha-manual-fila">
           <label class="fecha-manual-check">
             <input type="checkbox" id="usar-fecha-manual">

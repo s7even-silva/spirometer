@@ -48,6 +48,17 @@ class LectorSerial:
         self._detener.set()
         logger.info("LectorSerial detenido")
 
+    def reiniciar(self):
+        """Detiene el hilo de lectura actual y arranca uno nuevo, para que un
+        cambio de config.SERIAL_PORT (o de MODO_SIMULADO) tome efecto sin
+        reiniciar el proceso completo. Las sesiones de captura suscritas
+        siguen registradas: si el nuevo puerto no llega a abrirse, simplemente
+        no reciben muestras hasta que se reintente la conexión."""
+        self._detener.set()
+        if self._hilo:
+            self._hilo.join(timeout=config.SERIAL_TIMEOUT_S + 1.0)
+        self.iniciar()
+
     def _bucle_lectura(self):
         if config.MODO_SIMULADO:
             self._bucle_simulado()
