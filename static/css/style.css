@@ -831,6 +831,31 @@ h3 {
     margin-top: 0;
 }
 
+.indicador-conexion {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: var(--critical);
+    box-shadow: 0 0 0 3px var(--critical-soft);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Puerto abierto pero todavía sin una muestra válida (p. ej. los primeros
+   1-2s tras abrir el puerto, mientras el Arduino se reinicia por el DTR y
+   vuelve a arrancar su firmware): distinto de "sin conexión" para que esa
+   espera normal no se lea como una falla. */
+.indicador-conexion.conectando {
+    background-color: var(--warn);
+    box-shadow: 0 0 0 3px var(--warn-soft);
+}
+
+.indicador-conexion.conectado {
+    background-color: var(--ok);
+    box-shadow: 0 0 0 3px var(--ok-soft);
+}
+
 .btn-pequeno {
     padding: 6px 12px;
     font-size: 13px;

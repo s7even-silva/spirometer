@@ -144,6 +144,17 @@ def config_puerto_serial():
     }
 
 
+@app.route("/config/puerto_serial/estado")
+def estado_puerto_serial():
+    """Estado liviano para el indicador de conexión de la UI, consultado
+    periódicamente: evita el costo de listar puertos (list_ports.comports())
+    en cada sondeo."""
+    return {
+        "conectado": lector.conectado,
+        "recibiendo_datos": lector.recibiendo_datos(),
+    }
+
+
 @app.route("/prueba")
 def prueba():
     dni_activo = session.get("paciente_dni")

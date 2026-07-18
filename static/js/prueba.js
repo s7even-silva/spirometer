@@ -16,7 +16,9 @@ const puertoSerialSelect = document.getElementById("puerto-serial-select");
 const btnRefrescarPuertos = document.getElementById("btn-refrescar-puertos");
 const btnConectarPuerto = document.getElementById("btn-conectar-puerto");
 const puertoSerialEstado = document.getElementById("puerto-serial-estado");
+const puertoSerialIndicador = document.getElementById("puerto-serial-indicador");
 const URL_PUERTO_SERIAL = "/config/puerto_serial";
+const URL_PUERTO_SERIAL_ESTADO = "/config/puerto_serial/estado";
 
 function pintarEstadoPuerto(data) {
     const opcionesActuales = Array.from(puertoSerialSelect.options).map((o) => o.value);
@@ -66,6 +68,34 @@ btnConectarPuerto.addEventListener("click", () => {
 });
 
 cargarPuertosSeriales();
+
+// Indicador de conexión: se sondea aparte (endpoint liviano, sin listar
+// puertos) para no reescribir el <select> mientras el operador elige un
+// puerto distinto al que está activo ahora mismo.
+function actualizarIndicadorConexion() {
+    fetch(URL_PUERTO_SERIAL_ESTADO)
+        .then((r) => r.json())
+        .then((data) => {
+            const ok = data.conectado && data.recibiendo_datos;
+            const conectando = data.conectado && !data.recibiendo_datos;
+            puertoSerialIndicador.classList.toggle("conectado", ok);
+            puertoSerialIndicador.classList.toggle("conectando", conectando);
+            puertoSerialIndicador.title = ok
+                ? "Conectado, recibiendo datos"
+                : conectando
+                    // El Arduino suele reiniciarse al abrirse el puerto (reset por DTR),
+                    // así que unos segundos aquí antes de pasar a verde es normal.
+                    ? "Puerto abierto, esperando datos..."
+                    : "Sin conexión";
+        })
+        .catch(() => {
+            puertoSerialIndicador.classList.remove("conectado", "conectando");
+            puertoSerialIndicador.title = "No se pudo consultar el estado del puerto.";
+        });
+}
+
+actualizarIndicadorConexion();
+setInterval(actualizarIndicadorConexion, 500);
 
 // --- Navegación entre la vista de medición y la de resultados (paso 2 / 3) ---
 const vistaToggle = document.getElementById("vista-toggle");

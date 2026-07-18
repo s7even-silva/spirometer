@@ -17,7 +17,7 @@ const float OFFSET_B    = 0.0;
 unsigned long siguienteMuestra = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   delay(500); // da tiempo a que la app abra el puerto y limpie su búfer
 
   siguienteMuestra = millis();

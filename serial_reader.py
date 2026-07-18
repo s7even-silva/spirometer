@@ -31,6 +31,13 @@ class LectorSerial:
         self.offset_cero = 0.0
         self._hilo = None
         self._detener = threading.Event()
+        # Estado de conexión expuesto a la UI: "conectado" refleja si el puerto
+        # serial está abierto ahora mismo (o si estamos en modo simulado), y
+        # "ultima_muestra_ts" permite distinguir un puerto abierto pero mudo
+        # (cable sin sensor, firmware equivocado) de uno que sí está enviando
+        # datos válidos.
+        self.conectado = False
+        self.ultima_muestra_ts = None
 
     # ------------------------------------------------------------------
     # Ciclo de vida del hilo
@@ -57,6 +64,8 @@ class LectorSerial:
         self._detener.set()
         if self._hilo:
             self._hilo.join(timeout=config.SERIAL_TIMEOUT_S + 1.0)
+        self.conectado = False
+        self.ultima_muestra_ts = None
         self.iniciar()
 
     def _bucle_lectura(self):
@@ -76,6 +85,7 @@ class LectorSerial:
                 ) as puerto:
                     puerto.reset_input_buffer()
                     logger.info("Puerto serial %s abierto (%d baud)", config.SERIAL_PORT, config.BAUD_RATE)
+                    self.conectado = True
                     while not self._detener.is_set():
                         linea = puerto.readline().decode("utf-8", errors="ignore").strip()
                         if not linea:
@@ -87,11 +97,13 @@ class LectorSerial:
                             continue
                         self._procesar_muestra(presion_pa)
             except serial.SerialException as error:
+                self.conectado = False
                 logger.warning(
                     "Puerto serial %s no disponible (%s), reintentando en %.1fs",
                     config.SERIAL_PORT, error, config.RECONEXION_ESPERA_S,
                 )
                 time.sleep(config.RECONEXION_ESPERA_S)
+        self.conectado = False
 
     # ------------------------------------------------------------------
     # Modo simulado: sin hardware conectado, genera un soplido sintético
@@ -106,6 +118,7 @@ class LectorSerial:
         t_inicio_soplido = None
         habia_suscriptor = False
         soplido_emitido = False
+        self.conectado = True
 
         while not self._detener.is_set():
             hay_suscriptor = len(self._suscriptores) > 0
@@ -137,7 +150,9 @@ class LectorSerial:
     # Distribución de cada muestra a las sesiones activas + calibración de cero
     # ------------------------------------------------------------------
     def _procesar_muestra(self, presion_pa):
-        muestra = (time.time(), presion_pa)
+        marca_tiempo = time.time()
+        muestra = (marca_tiempo, presion_pa)
+        self.ultima_muestra_ts = marca_tiempo
         with self._lock:
             if not self._suscriptores:
                 self._calibracion.append(presion_pa)
@@ -158,6 +173,14 @@ class LectorSerial:
             if cola in self._suscriptores:
                 self._suscriptores.remove(cola)
         logger.info("Sesión de captura finalizada")
+
+    def recibiendo_datos(self):
+        """True solo si el puerto está abierto y llegó una muestra hace poco:
+        un puerto conectado pero mudo (sensor mal cableado, firmware
+        equivocado) debe distinguirse de uno que sí está transmitiendo."""
+        if not self.conectado or self.ultima_muestra_ts is None:
+            return False
+        return (time.time() - self.ultima_muestra_ts) < config.PUERTO_SIN_DATOS_TIMEOUT_S
 
 
 lector = LectorSerial()

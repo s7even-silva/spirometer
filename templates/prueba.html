@@ -21,6 +21,7 @@
           <select id="puerto-serial-select"></select>
           <button type="button" id="btn-refrescar-puertos" class="btn-secondary btn-pequeno">Actualizar</button>
           <button type="button" id="btn-conectar-puerto" class="btn-secondary btn-pequeno">Conectar</button>
+          <span id="puerto-serial-indicador" class="indicador-conexion" title="Sin datos"></span>
           <span id="puerto-serial-estado" class="estado"></span>
         </div>
         <div class="fecha-manual-fila">
@@ -44,7 +45,7 @@
             step="1">
         </div>
         <div class="controles-fila">
-          <button id="btn-iniciar-sesion" class="btn-primary">Iniciar sesión</button>
+          <button id="btn-iniciar-sesion" class="btn-primary">Iniciar medición</button>
           <button id="btn-nuevo-intento" class="btn-primary" hidden>Repetir intento</button>
           <button id="btn-detener" class="btn-secondary" disabled>Detener</button>
           <button id="btn-finalizar-sesion" class="btn-secondary" hidden>Finalizar sesión</button>

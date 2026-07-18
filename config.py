@@ -15,6 +15,7 @@ BAUD_RATE = 115200
 SAMPLE_INTERVAL_S = 0.010          # 10 ms => 100 Hz, cadencia de envío del microcontrolador
 SERIAL_TIMEOUT_S = 1.0
 RECONEXION_ESPERA_S = 2.0          # segundos entre reintentos si el puerto se desconecta
+PUERTO_SIN_DATOS_TIMEOUT_S = 0.5   # sin muestras nuevas por más de esto, se considera "sin datos" en la UI
 
 # Si no hay hardware conectado, genera una señal sintética de soplido en vez
 # de abrir el puerto real. Útil para desarrollar y probar la UI sin sensor.
