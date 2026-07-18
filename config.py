@@ -11,7 +11,7 @@ ninguno de estos números está calibrado, son valores de ejemplo.
 # Comunicación serial
 # =====================================================================
 SERIAL_PORT = "COM20"
-BAUD_RATE = 9600
+BAUD_RATE = 115200
 SAMPLE_INTERVAL_S = 0.010          # 10 ms => 100 Hz, cadencia de envío del microcontrolador
 SERIAL_TIMEOUT_S = 1.0
 RECONEXION_ESPERA_S = 2.0          # segundos entre reintentos si el puerto se desconecta
@@ -29,8 +29,8 @@ PERFIL_SIMULACION = "sano"
 # Geometría del tubo de flujo (tipo Venturi / Pitot con restricción)
 # =====================================================================
 # D1: diámetro de la sección amplia (entrada), D2: diámetro de la garganta/orificio.
-DIAMETRO_ENTRADA_MM = 28.0
-DIAMETRO_GARGANTA_MM = 15.0
+DIAMETRO_ENTRADA_MM = 10
+DIAMETRO_GARGANTA_MM = 5
 COEFICIENTE_DESCARGA_CD = 0.98      # Cd típico 0.95-0.99, se ajusta con calibración empírica
 
 # =====================================================================
