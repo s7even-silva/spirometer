@@ -57,7 +57,15 @@ BTPS_TEMP_CORPORAL_C = 37.0
 # Calibración de cero y filtrado de señal
 # =====================================================================
 MUESTRAS_CALIBRACION_CERO = 50        # nº de muestras en reposo para el offset de presión
-VENTANA_FILTRO_MEDIA_MOVIL = 5        # nº de muestras para suavizar la señal de presión
+VENTANA_FILTRO_MEDIA_MOVIL = 5        # nº de muestras para suavizar la señal de presión (filtro en vivo, muestra a muestra)
+
+# Filtro pasa-bajos Butterworth (orden 2, fase cero vía filtfilt) aplicado en
+# el reprocesamiento offline sobre la señal de presión completa, antes de
+# convertir a flujo. Elimina jitter de alta frecuencia del sensor/ADC de forma
+# más agresiva que la media móvil, sin el retraso ni el aplanamiento del pico
+# (PEF) que introduciría una media móvil con una ventana igual de efectiva.
+FILTRO_BUTTERWORTH_ORDEN = 2
+FILTRO_BUTTERWORTH_CORTE_HZ = 10.0     # frecuencia de corte; la dinámica real de un soplido está muy por debajo
 
 # =====================================================================
 # Detección de inicio/fin de la maniobra espirométrica

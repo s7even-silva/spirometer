@@ -14,6 +14,7 @@ import math
 from collections import deque
 
 import numpy as np
+from scipy.signal import butter, filtfilt
 
 import config
 
@@ -81,9 +82,29 @@ def flujo_a_presion(q_l_s, rho):
 
 
 def suavizar_senal(valores, ventana=None):
-    """Media móvil aplicada a un arreglo completo (uso en reprocesamiento final)."""
-    ventana = config.VENTANA_FILTRO_MEDIA_MOVIL if ventana is None else ventana
+    """Suaviza la señal completa en el reprocesamiento offline final.
+
+    Usa un pasa-bajos Butterworth aplicado con filtfilt (fase cero, sin
+    retraso ni desplazamiento del pico) para eliminar jitter de alta
+    frecuencia. filtfilt necesita un mínimo de muestras (> 3 * el orden del
+    filtro trasladado a coeficientes); si la señal es demasiado corta para
+    eso, cae a la media móvil simple como respaldo.
+    """
     valores = np.asarray(valores, dtype=float)
+    if len(valores) == 0:
+        return valores
+
+    b, a = butter(config.FILTRO_BUTTERWORTH_ORDEN, config.FILTRO_BUTTERWORTH_CORTE_HZ,
+                   btype="low", fs=1.0 / config.SAMPLE_INTERVAL_S)
+    longitud_minima = 3 * max(len(a), len(b))
+    if len(valores) > longitud_minima:
+        return filtfilt(b, a, valores)
+
+    return _media_movil(valores, ventana)
+
+
+def _media_movil(valores, ventana=None):
+    ventana = config.VENTANA_FILTRO_MEDIA_MOVIL if ventana is None else ventana
     if ventana <= 1 or len(valores) == 0:
         return valores
     kernel = np.ones(ventana) / ventana
